@@ -3,55 +3,69 @@ package hw02unpackstring
 import (
 	"errors"
 	"strconv"
-	"strings"
 	"unicode"
 )
 
 var ErrInvalidString = errors.New("invalid string")
 
-func Unpack(s string) (string, error) {
-	result := ""
-	runes := []rune(s)
-	r_tmp := "error"
-	var flag bool
-	r_s := ""
+func Unpack(s string) (result string, err error) {
+	posRunes := []rune(s)
+	var specialFlag bool
+	var repeatnum int
+	var curRuneIsDig bool
+	var nextRuneIsDig bool
 
-	for i, r := range runes {
-		if flag {
-			flag = false
+	for i, r := range posRunes {
+		curRuneIsDig = unicode.IsDigit(r)
+		nextRuneIsDig = getNextRuneIsDig(i, posRunes)
+
+		if i == 0 && curRuneIsDig ||
+			(curRuneIsDig && nextRuneIsDig && !specialFlag) {
+			return "", ErrInvalidString
+		}
+		repeatnum = 1
+
+		if curRuneIsDig || specialFlag {
+			specialFlag = false
 			continue
 		}
 
 		if r == rune('\\') {
-			r_s = string(r) + string(runes[i+1])
-			flag = true
-		} else {
-			r_s = string(r)
-		}
-
-		switch {
-		case unicode.IsDigit(r):
-			num, _ := strconv.Atoi(r_s)
-			if r_tmp == "error" {
+			specialFlag = true
+			if i != len(posRunes)-1 {
+				r = handlespecial(r, posRunes[i+1])
+			} else {
 				return "", ErrInvalidString
 			}
-			if num == 0 {
-				result = strings.TrimSuffix(result, r_tmp)
-			} else {
-				for j := 1; j < num; j++ {
-					result += r_tmp
-				}
+			i += 1
+			nextRuneIsDig = getNextRuneIsDig(i, posRunes)
+		}
+
+		if nextRuneIsDig {
+			nextr := posRunes[i+1]
+			repeatnum, err = strconv.Atoi(string(nextr))
+			if err != nil {
+				return "", err
 			}
-			r_tmp = "error"
+		}
 
-		case unicode.IsLetter(r) || unicode.IsSpace(r):
-			r_tmp = r_s
-			result += r_tmp
-		default:
-			return "", ErrInvalidString
-
+		for j := 0; j < repeatnum; j++ {
+			result += string(r)
 		}
 	}
-
 	return result, nil
+}
+
+func handlespecial(special rune, r rune) rune {
+	// in this cases special is "\"
+	return r
+}
+
+func getNextRuneIsDig(i int, posRunes []rune) (nextRuneIsDig bool) {
+	if i != len(posRunes)-1 {
+		nextRuneIsDig = unicode.IsDigit(posRunes[i+1])
+	} else {
+		nextRuneIsDig = false
+	}
+	return
 }
