@@ -3,41 +3,47 @@ package hw02unpackstring
 import (
 	"errors"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
 var ErrInvalidString = errors.New("invalid string")
 
 func Unpack(s string) (result string, err error) {
-	posRunes := []rune(s)
-	var specialFlag bool
+	var resultBuilder strings.Builder
+
 	var repeatnum int
+	var specialFlag bool
 	var curRuneIsDig bool
 	var nextRuneIsDig bool
 
+	posRunes := []rune(s)
 	for i, r := range posRunes {
 		curRuneIsDig = unicode.IsDigit(r)
 		nextRuneIsDig = getNextRuneIsDig(i, posRunes)
 
-		if i == 0 && curRuneIsDig ||
+		if (i == 0 && curRuneIsDig) ||
 			(curRuneIsDig && nextRuneIsDig && !specialFlag) {
 			return "", ErrInvalidString
 		}
-		repeatnum = 1
 
 		if curRuneIsDig || specialFlag {
 			specialFlag = false
 			continue
 		}
 
+		repeatnum = 1
 		if r == rune('\\') {
 			specialFlag = true
 			if i != len(posRunes)-1 {
-				r = handlespecial(r, posRunes[i+1])
+				r, err = handleSpecial(posRunes[i+1])
+				if err != nil {
+					return "", err
+				}
 			} else {
 				return "", ErrInvalidString
 			}
-			i += 1
+			i++
 			nextRuneIsDig = getNextRuneIsDig(i, posRunes)
 		}
 
@@ -50,22 +56,30 @@ func Unpack(s string) (result string, err error) {
 		}
 
 		for j := 0; j < repeatnum; j++ {
-			result += string(r)
+			resultBuilder.WriteRune(r)
 		}
 	}
+	result = resultBuilder.String()
 	return result, nil
 }
 
-func handlespecial(special rune, r rune) rune {
-	// in this cases special is "\"
-	return r
+func handleSpecial(r rune) (rune, error) {
+	// in this cases special is always "\"
+	switch r {
+	case 'n':
+		return '\n', nil
+	case 't':
+		return '\t', nil
+	}
+	if !(unicode.IsDigit(r) || r == rune('\\')) {
+		return 0, ErrInvalidString
+	}
+	return r, nil
 }
 
-func getNextRuneIsDig(i int, posRunes []rune) (nextRuneIsDig bool) {
+func getNextRuneIsDig(i int, posRunes []rune) bool {
 	if i != len(posRunes)-1 {
-		nextRuneIsDig = unicode.IsDigit(posRunes[i+1])
-	} else {
-		nextRuneIsDig = false
+		return unicode.IsDigit(posRunes[i+1])
 	}
-	return
+	return false
 }
