@@ -9,13 +9,17 @@ import (
 
 func TestUnpack(t *testing.T) {
 	tests := []struct {
+		name     string
 		input    string
 		expected string
 	}{
-		{input: "a4bc2d5e", expected: "aaaabccddddde"},
-		{input: "abccd", expected: "abccd"},
-		{input: "", expected: ""},
-		{input: "aaa0b", expected: "aab"},
+		{name: "empty", input: "", expected: ""},
+		{name: "charnum", input: "a4bc2d5e", expected: "aaaabccddddde"},
+		{name: "two equal chars", input: "abccd", expected: "abccd"},
+		{name: "char0", input: "aaa0b", expected: "aab"},
+		{name: "char1", input: "a1b", expected: "ab"},
+		{name: "rus", input: "б2ж3й1", expected: "ббжжжй"},
+		{name: "shieldchar", input: "d\n5abc", expected: "d\n\n\n\n\nabc"},
 		// uncomment if task with asterisk completed
 		// {input: `qwe\4\5`, expected: `qwe45`},
 		// {input: `qwe\45`, expected: `qwe44444`},
@@ -25,7 +29,7 @@ func TestUnpack(t *testing.T) {
 
 	for _, tc := range tests {
 		tc := tc
-		t.Run(tc.input, func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			result, err := Unpack(tc.input)
 			require.NoError(t, err)
 			require.Equal(t, tc.expected, result)
