@@ -6,9 +6,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Change to true if needed.
-var taskWithAsteriskIsCompleted = false
-
 var text = `Как видите, он  спускается  по  лестнице  вслед  за  своим
 	другом   Кристофером   Робином,   головой   вниз,  пересчитывая
 	ступеньки собственным затылком:  бум-бум-бум.  Другого  способа
@@ -44,13 +41,32 @@ var text = `Как видите, он  спускается  по  лестни�
 		В этот вечер...`
 
 func TestTop10(t *testing.T) {
-	t.Run("no words in empty string", func(t *testing.T) {
-		require.Len(t, Top10(""), 0)
-	})
-
-	t.Run("positive test", func(t *testing.T) {
-		if taskWithAsteriskIsCompleted {
-			expected := []string{
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{name: "empty", input: "", expected: []string(nil)},
+		{name: "capitallet", input: "Cat and dog, cat And Dog, cat and dog donkey!",
+			expected: []string{
+				"and",    // 3
+				"cat",    // 3
+				"dog",    // 3
+				"donkey", // 1
+			}},
+		{name: "punct", input: "cat and dog, one dog,two cats and one man very-very",
+			expected: []string{
+				"and",       // 2
+				"dog",       // 2
+				"one",       // 2
+				"cat",       // 1
+				"cats",      // 1
+				"man",       // 1
+				"two",       // 1
+				"very-very", // 1
+			}},
+		{name: "textWinnierus", input: text,
+			expected: []string{
 				"а",         // 8
 				"он",        // 8
 				"и",         // 6
@@ -61,22 +77,13 @@ func TestTop10(t *testing.T) {
 				"если",      // 4
 				"кристофер", // 4
 				"не",        // 4
-			}
-			require.Equal(t, expected, Top10(text))
-		} else {
-			expected := []string{
-				"он",        // 8
-				"а",         // 6
-				"и",         // 6
-				"ты",        // 5
-				"что",       // 5
-				"-",         // 4
-				"Кристофер", // 4
-				"если",      // 4
-				"не",        // 4
-				"то",        // 4
-			}
-			require.Equal(t, expected, Top10(text))
-		}
-	})
+			}},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := Top10(tc.input)
+			require.Equal(t, tc.expected, result)
+		})
+	}
 }
