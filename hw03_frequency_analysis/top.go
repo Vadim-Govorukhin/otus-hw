@@ -7,8 +7,8 @@ import (
 )
 
 type FrequencyAnalizer struct {
-	freq_map map[string]int
-	top      []string
+	freqMap map[string]int
+	top     []string
 }
 
 func (f FrequencyAnalizer) Len() int {
@@ -20,33 +20,33 @@ func (f FrequencyAnalizer) Swap(i, j int) {
 }
 
 func (f FrequencyAnalizer) Less(i, j int) bool {
-	if f.freq_map[f.top[i]] == f.freq_map[f.top[j]] {
+	if f.freqMap[f.top[i]] == f.freqMap[f.top[j]] {
 		return f.top[i] < f.top[j]
 	}
-	return f.freq_map[f.top[i]] > f.freq_map[f.top[j]]
+	return f.freqMap[f.top[i]] > f.freqMap[f.top[j]]
 }
 
 func Top10(str string) []string {
 	freqAn := FrequencyAnalizer{
-		freq_map: make(map[string]int),
+		freqMap: make(map[string]int),
 	}
 	splitted := strings.FieldsFunc(strings.ToLower(str), separatorRule)
 	for _, word := range splitted {
 		if word == "-" {
 			continue
 		}
-		val, ok := freqAn.freq_map[word]
+		val, ok := freqAn.freqMap[word]
 		if ok {
 			val++
 		} else {
 			val = 1
 		}
-		freqAn.freq_map[word] = val
+		freqAn.freqMap[word] = val
 	}
 
-	//fmt.Println(f.freq_map)
+	// fmt.Println(f.freqMap)
 
-	for key := range freqAn.freq_map {
+	for key := range freqAn.freqMap {
 		freqAn.top = append(freqAn.top, key)
 	}
 	sort.Sort(freqAn)

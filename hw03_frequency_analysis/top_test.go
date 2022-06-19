@@ -47,14 +47,17 @@ func TestTop10(t *testing.T) {
 		expected []string
 	}{
 		{name: "empty", input: "", expected: []string(nil)},
-		{name: "capitallet", input: "Cat and dog, cat And Dog, cat and dog donkey!",
+		{
+			name: "capitallet", input: "Cat and dog, cat And Dog, cat and dog donkey!",
 			expected: []string{
 				"and",    // 3
 				"cat",    // 3
 				"dog",    // 3
 				"donkey", // 1
-			}},
-		{name: "punct", input: "cat and dog, one dog,two cats and one man very-very",
+			},
+		},
+		{
+			name: "punct", input: "cat and dog, one dog,two cats and one man very-very",
 			expected: []string{
 				"and",       // 2
 				"dog",       // 2
@@ -64,8 +67,10 @@ func TestTop10(t *testing.T) {
 				"man",       // 1
 				"two",       // 1
 				"very-very", // 1
-			}},
-		{name: "textWinnierus", input: text,
+			},
+		},
+		{
+			name: "textWinnierus", input: text,
 			expected: []string{
 				"а",         // 8
 				"он",        // 8
@@ -77,7 +82,8 @@ func TestTop10(t *testing.T) {
 				"если",      // 4
 				"кристофер", // 4
 				"не",        // 4
-			}},
+			},
+		},
 	}
 
 	for _, tc := range tests {
