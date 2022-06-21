@@ -7,13 +7,115 @@ import (
 )
 
 func TestList(t *testing.T) {
-	t.Run("empty list", func(t *testing.T) {
-		l := NewList()
+	testcases := []struct {
+		name    string
+		runfunc func(t *testing.T)
+	}{
+		{
+			name: "empty list",
+			runfunc: func(t *testing.T) {
+				l := NewList()
 
-		require.Equal(t, 0, l.Len())
-		require.Nil(t, l.Front())
-		require.Nil(t, l.Back())
-	})
+				require.Equal(t, 0, l.Len())
+				require.Nil(t, l.Front())
+				require.Nil(t, l.Back())
+			},
+		},
+		{
+			name: "pushfront",
+			runfunc: func(t *testing.T) {
+				l := NewList()
+
+				l.PushFront(10) // [10]
+				require.Equal(t, 1, l.Len())
+				item := l.Front()
+				require.Equal(t, 10, item.Value)
+				require.Nil(t, item.Prev.Prev)
+				require.Nil(t, item.Next.Next)
+
+			},
+		},
+		{
+			name: "pushback",
+			runfunc: func(t *testing.T) {
+				l := NewList()
+
+				l.PushBack(100) // [100]
+				require.Equal(t, 1, l.Len())
+				item := l.Front()
+				require.Equal(t, 100, item.Value)
+				require.Nil(t, item.Prev.Prev)
+				require.Nil(t, item.Next.Next)
+
+			},
+		},
+		{
+			name: "pushfront+pushback",
+			runfunc: func(t *testing.T) {
+				l := NewList()
+
+				l.PushFront(10) // [10]
+				l.PushBack(100) // [10, 100]
+				require.Equal(t, 2, l.Len())
+				item := l.Front() // 10
+				require.Equal(t, 10, item.Value)
+				require.Nil(t, item.Prev.Prev)
+				require.Equal(t, 100, item.Next.Value)
+				require.Nil(t, item.Next.Next.Next)
+
+			},
+		},
+		{
+			name: "remove middle",
+			runfunc: func(t *testing.T) {
+				l := NewList()
+
+				l.PushFront(10) // [10]
+				l.PushBack(20)  // [10, 20]
+				l.PushBack(30)  // [10, 20, 30]
+				require.Equal(t, 3, l.Len())
+
+				middle := l.Front().Next // 20
+				l.Remove(middle)         // [10, 30]
+				require.Equal(t, 2, l.Len())
+
+				item := l.Front() // 10
+				require.Equal(t, 10, item.Value)
+				require.Nil(t, item.Prev.Prev)
+				require.Equal(t, 30, item.Next.Value)
+				require.Nil(t, item.Next.Next.Next)
+
+			},
+		},
+		{
+			name: "move to front",
+			runfunc: func(t *testing.T) {
+				l := NewList()
+
+				l.PushFront(10) // [10]
+				l.PushBack(20)  // [10, 20]
+				l.PushBack(30)  // [10, 20, 30]
+
+				l.MoveToFront(l.Front()) // [10, 20, 30]
+				item := l.Front()
+				require.Equal(t, 10, item.Value)
+				require.Nil(t, item.Prev.Prev)
+				require.Equal(t, 20, item.Next.Value)
+				require.Equal(t, 30, item.Next.Next.Value)
+
+				l.MoveToFront(l.Back()) // [30, 10, 20]
+				item = l.Front()
+				require.Equal(t, 30, item.Value)
+				require.Nil(t, item.Prev.Prev)
+				require.Equal(t, 10, item.Next.Value)
+				require.Equal(t, 20, item.Next.Next.Value)
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, tc.runfunc)
+	}
 
 	t.Run("complex", func(t *testing.T) {
 		l := NewList()
