@@ -1,6 +1,7 @@
 package hw04lrucache
 
 import (
+	"fmt"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -81,6 +82,24 @@ func TestCache(t *testing.T) {
 			},
 		},
 		{
+			name: "clear cache",
+			runfunc: func(t *testing.T) {
+				c := NewCache(2)
+
+				c.Set("aaa", 1)
+				c.Set("bbb", 2)
+				c.Clear()
+
+				val, ok := c.Get("aaa")
+				require.False(t, ok)
+				require.Nil(t, val)
+
+				val, ok = c.Get("bbb")
+				require.False(t, ok)
+				require.Nil(t, val)
+			},
+		},
+		{
 			name: "simple",
 			runfunc: func(t *testing.T) {
 				c := NewCache(5)
@@ -111,15 +130,77 @@ func TestCache(t *testing.T) {
 				require.Nil(t, val)
 			},
 		},
+		{
+			name: "purge logic",
+			runfunc: func(t *testing.T) {
+				c := NewCache(3)
+
+				c.Set("aaa", 100)
+				c.Set("bbb", 200)
+				c.Set("ccc", 300)
+				c.Set("bbb", 400)
+
+				elems := c.GetQueueValues()
+				require.Equal(t, 3, len(elems))
+				require.Equal(t, []interface{}{400, 300, 100}, elems)
+				fmt.Println("[test] ", c.GetItemsKeys(), elems)
+
+				val, ok := c.Get("aaa") // [100, 400, 300]
+				require.True(t, ok)
+				require.Equal(t, 100, val)
+
+				elems = c.GetQueueValues()
+				fmt.Println("[test] ", c.GetItemsKeys(), elems)
+				require.Equal(t, 3, len(elems))
+
+				val, ok = c.Get("bbb") // [400, 100, 300]
+				require.True(t, ok)
+				require.Equal(t, 400, val)
+
+				elems = c.GetQueueValues()
+				fmt.Println("[test] ", c.GetItemsKeys(), elems)
+				require.Equal(t, 3, len(elems))
+
+				val, ok = c.Get("ccc") // [300, 400, 100]
+				require.True(t, ok)
+				require.Equal(t, 300, val)
+
+				elems = c.GetQueueValues()
+				fmt.Println("[test] ", c.GetItemsKeys(), elems)
+				require.Equal(t, 3, len(elems))
+
+				c.Set("ddd", 500)
+
+				elems = c.GetQueueValues()
+				fmt.Println("[test] ", c.GetItemsKeys(), elems)
+
+				require.Equal(t, 3, len(elems))
+				require.Equal(t, []interface{}{500, 300, 400}, elems)
+				fmt.Println(elems)
+
+				val, ok = c.Get("aaa")
+				require.False(t, ok)
+				require.Nil(t, val)
+
+				val, ok = c.Get("bbb")
+				require.True(t, ok)
+				require.Equal(t, 400, val)
+
+				val, ok = c.Get("ccc")
+				require.True(t, ok)
+				require.Equal(t, 300, val)
+
+				val, ok = c.Get("ddd")
+				require.True(t, ok)
+				require.Equal(t, 500, val)
+
+			},
+		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, tc.runfunc)
 	}
-
-	t.Run("purge logic", func(t *testing.T) {
-		// Write me
-	})
 }
 
 func TestCacheMultithreading(t *testing.T) {
