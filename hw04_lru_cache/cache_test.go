@@ -1,7 +1,6 @@
 package hw04lrucache
 
 import (
-	"fmt"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -20,20 +19,19 @@ func TestCache(t *testing.T) {
 			runfunc: func(t *testing.T) {
 				c := NewCache(10)
 
-				_, ok := c.Get("aaa")
+				val, ok := c.Get("aaa")
 				require.False(t, ok)
+				require.Nil(t, val)
 
-				_, ok = c.Get("bbb")
+				val, ok = c.Get("bbb")
 				require.False(t, ok)
+				require.Nil(t, val)
 			},
 		},
 		{
 			name: "add to cache",
 			runfunc: func(t *testing.T) {
 				c := NewCache(2)
-
-				_, ok := c.Get("aaa")
-				require.False(t, ok)
 
 				wasInCache := c.Set("aaa", 100)
 				require.False(t, wasInCache)
@@ -48,10 +46,9 @@ func TestCache(t *testing.T) {
 			runfunc: func(t *testing.T) {
 				c := NewCache(2)
 
-				wasInCache := c.Set("aaa", 100)
-				require.False(t, wasInCache)
+				c.Set("aaa", 100)
 
-				wasInCache = c.Set("aaa", 1)
+				wasInCache := c.Set("aaa", 1)
 				require.True(t, wasInCache)
 
 				val, ok := c.Get("aaa")
@@ -60,13 +57,17 @@ func TestCache(t *testing.T) {
 			},
 		},
 		{
-			name: "cacheoverflow",
+			name: "overflow cache",
 			runfunc: func(t *testing.T) {
 				c := NewCache(2)
 
-				c.Set("aaa", 1)
-				c.Set("bbb", 2)
-				c.Set("ccc", 3)
+				c.Set("aaa", 1) // [1]
+				c.Set("bbb", 2) // [2, 1]
+				c.Set("ccc", 3) // [3, 2]
+
+				elems := c.GetQueueValues()
+				require.Equal(t, 2, len(elems))
+				require.Equal(t, []interface{}{3, 2}, elems)
 
 				val, ok := c.Get("aaa")
 				require.False(t, ok)
@@ -100,6 +101,23 @@ func TestCache(t *testing.T) {
 			},
 		},
 		{
+			name: "different types of elements",
+			runfunc: func(t *testing.T) {
+				c := NewCache(2)
+
+				c.Set("aaa", 1)
+				c.Set("это тест", "и это тест")
+
+				val, ok := c.Get("aaa")
+				require.True(t, ok)
+				require.Equal(t, 1, val)
+
+				val, ok = c.Get("это тест")
+				require.True(t, ok)
+				require.Equal(t, "и это тест", val)
+			},
+		},
+		{
 			name: "simple",
 			runfunc: func(t *testing.T) {
 				c := NewCache(5)
@@ -110,16 +128,20 @@ func TestCache(t *testing.T) {
 				wasInCache = c.Set("bbb", 200)
 				require.False(t, wasInCache)
 
-				val, ok := c.Get("aaa")
+				val, ok := c.Get("aaa") // [100, 200]
 				require.True(t, ok)
 				require.Equal(t, 100, val)
 
-				val, ok = c.Get("bbb")
+				val, ok = c.Get("bbb") // [200, 100]
 				require.True(t, ok)
 				require.Equal(t, 200, val)
 
-				wasInCache = c.Set("aaa", 300)
+				wasInCache = c.Set("aaa", 300) // [300, 200]
 				require.True(t, wasInCache)
+
+				elems := c.GetQueueValues()
+				require.Equal(t, 2, len(elems))
+				require.Equal(t, []interface{}{300, 200}, elems)
 
 				val, ok = c.Get("aaa")
 				require.True(t, ok)
@@ -138,53 +160,46 @@ func TestCache(t *testing.T) {
 				c.Set("aaa", 100)
 				c.Set("bbb", 200)
 				c.Set("ccc", 300)
-				c.Set("bbb", 400)
+				c.Set("bbb", 400) // [400, 300, 100]
 
 				elems := c.GetQueueValues()
 				require.Equal(t, 3, len(elems))
 				require.Equal(t, []interface{}{400, 300, 100}, elems)
-				fmt.Println("[test] ", c.GetItemsKeys(), elems)
 
 				val, ok := c.Get("aaa") // [100, 400, 300]
 				require.True(t, ok)
 				require.Equal(t, 100, val)
 
-				elems = c.GetQueueValues()
-				fmt.Println("[test] ", c.GetItemsKeys(), elems)
-				require.Equal(t, 3, len(elems))
-
 				val, ok = c.Get("bbb") // [400, 100, 300]
 				require.True(t, ok)
 				require.Equal(t, 400, val)
-
-				elems = c.GetQueueValues()
-				fmt.Println("[test] ", c.GetItemsKeys(), elems)
-				require.Equal(t, 3, len(elems))
 
 				val, ok = c.Get("ccc") // [300, 400, 100]
 				require.True(t, ok)
 				require.Equal(t, 300, val)
 
-				elems = c.GetQueueValues()
-				fmt.Println("[test] ", c.GetItemsKeys(), elems)
-				require.Equal(t, 3, len(elems))
-
-				c.Set("ddd", 500)
-
-				elems = c.GetQueueValues()
-				fmt.Println("[test] ", c.GetItemsKeys(), elems)
-
-				require.Equal(t, 3, len(elems))
-				require.Equal(t, []interface{}{500, 300, 400}, elems)
-				fmt.Println(elems)
-
-				val, ok = c.Get("aaa")
+				val, ok = c.Get("ddd") // [300, 400, 100]
 				require.False(t, ok)
 				require.Nil(t, val)
 
-				val, ok = c.Get("bbb")
+				elems = c.GetQueueValues()
+				require.Equal(t, 3, len(elems))
+				require.Equal(t, []interface{}{300, 400, 100}, elems)
+
+				c.Set("ddd", 500)
+				c.Set("aaa", 600)
+
+				elems = c.GetQueueValues()
+				require.Equal(t, 3, len(elems))
+				require.Equal(t, []interface{}{600, 500, 300}, elems)
+
+				val, ok = c.Get("aaa")
 				require.True(t, ok)
-				require.Equal(t, 400, val)
+				require.Equal(t, 600, val)
+
+				val, ok = c.Get("bbb")
+				require.False(t, ok)
+				require.Nil(t, val)
 
 				val, ok = c.Get("ccc")
 				require.True(t, ok)
@@ -204,25 +219,62 @@ func TestCache(t *testing.T) {
 }
 
 func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // Remove me if task with asterisk completed.
+	testcases := []struct {
+		name    string
+		runfunc func(t *testing.T)
+	}{
+		{
+			name: "simple",
+			runfunc: func(t *testing.T) {
+				c := NewCache(10)
+				wg := &sync.WaitGroup{}
+				wg.Add(2)
 
-	c := NewCache(10)
-	wg := &sync.WaitGroup{}
-	wg.Add(2)
+				go func() {
+					defer wg.Done()
+					for i := 0; i < 1_000; i++ {
+						c.Set(Key("a"), i)
+					}
+				}()
 
-	go func() {
-		defer wg.Done()
-		for i := 0; i < 1_000_000; i++ {
-			c.Set(Key(strconv.Itoa(i)), i)
-		}
-	}()
+				go func() {
+					defer wg.Done()
+					for i := 0; i < 1_000; i++ {
+						c.Get(Key("a"))
+					}
+				}()
 
-	go func() {
-		defer wg.Done()
-		for i := 0; i < 1_000_000; i++ {
-			c.Get(Key(strconv.Itoa(rand.Intn(1_000_000))))
-		}
-	}()
+				wg.Wait()
+			},
+		},
+		{
+			name: "complex",
+			runfunc: func(t *testing.T) {
+				c := NewCache(10)
+				wg := &sync.WaitGroup{}
+				wg.Add(2)
 
-	wg.Wait()
+				go func() {
+					defer wg.Done()
+					for i := 0; i < 1_000_000; i++ {
+						c.Set(Key(strconv.Itoa(i)), i)
+					}
+				}()
+
+				go func() {
+					defer wg.Done()
+					for i := 0; i < 1_000_000; i++ {
+						c.Get(Key(strconv.Itoa(rand.Intn(1_000_000))))
+					}
+				}()
+
+				wg.Wait()
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, tc.runfunc)
+	}
+
 }

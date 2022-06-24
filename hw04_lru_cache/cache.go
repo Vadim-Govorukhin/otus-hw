@@ -1,6 +1,6 @@
 package hw04lrucache
 
-import "fmt"
+import "sync"
 
 type Key string
 
@@ -9,6 +9,7 @@ type Cache interface {
 	Get(key Key) (interface{}, bool)     // Получить значение из кэша по ключу
 	Clear()                              // Очистить кэш.
 
+	///////////// Удалить
 	GetQueueValues() []interface{} // Для тестов
 	GetItemsKeys() []string        // Для тестов
 }
@@ -17,6 +18,7 @@ type lruCache struct {
 	capacity int               // Количество сохраняемых в кэше элементов
 	queue    List              // очередь [последних используемых элементов] на основе двусвязного списка
 	items    map[Key]*ListItem // словарь, отображающий ключ (строка) на элемент очереди
+	mu       sync.Mutex        // Для безопасности горутин
 }
 
 type cacheItem struct {
@@ -33,15 +35,15 @@ func NewCache(capacity int) Cache {
 }
 
 func (c *lruCache) Set(key Key, value interface{}) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	_, ok := c.items[key]
+
 	if ok {
-		fmt.Println("[set] update map: ", key, value)
 		c.items[key].Value = value
 		c.queue.MoveToFront(c.items[key])
-
 		return ok
 	}
-	fmt.Println("[set] add to map: ", key, value)
 	item := c.queue.PushFront(value)
 	c.items[key] = item
 	if c.queue.Len() > c.capacity {
@@ -49,7 +51,6 @@ func (c *lruCache) Set(key Key, value interface{}) bool {
 		c.queue.Remove(deleteitem)
 		for deletekey, val := range c.items {
 			if val == deleteitem {
-				fmt.Println("[set] delete from map: ", deletekey, deleteitem.Value)
 				delete(c.items, deletekey)
 				break
 			}
@@ -60,6 +61,8 @@ func (c *lruCache) Set(key Key, value interface{}) bool {
 }
 
 func (c *lruCache) Get(key Key) (interface{}, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	item, ok := c.items[key]
 	if ok {
 		c.queue.MoveToFront(item)
@@ -83,7 +86,7 @@ func (c *lruCache) GetQueueValues() []interface{} {
 
 func (c *lruCache) GetItemsKeys() []string {
 	var keys []string
-	for key, _ := range c.items {
+	for key := range c.items {
 		keys = append(keys, string(key))
 	}
 	return keys
