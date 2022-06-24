@@ -14,6 +14,7 @@ func TestList(t *testing.T) {
 		{
 			name: "empty list",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				l := NewList()
 
 				require.Equal(t, 0, l.Len())
@@ -24,6 +25,7 @@ func TestList(t *testing.T) {
 		{
 			name: "pushfront",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				l := NewList()
 
 				l.PushFront(10) // [10]
@@ -37,6 +39,7 @@ func TestList(t *testing.T) {
 		{
 			name: "pushfront",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				l := NewList()
 
 				l.PushFront(10) // [10]
@@ -50,6 +53,7 @@ func TestList(t *testing.T) {
 		{
 			name: "pushback",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				l := NewList()
 
 				l.PushBack(100) // [100]
@@ -58,12 +62,12 @@ func TestList(t *testing.T) {
 				require.Equal(t, 100, item.Value)
 				require.Nil(t, item.Prev.Prev)
 				require.Nil(t, item.Next.Next)
-
 			},
 		},
 		{
 			name: "pushfront+pushback",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				l := NewList()
 
 				l.PushFront(10) // [10]
@@ -74,12 +78,12 @@ func TestList(t *testing.T) {
 				require.Nil(t, item.Prev.Prev)
 				require.Equal(t, 100, item.Next.Value)
 				require.Nil(t, item.Next.Next.Next)
-
 			},
 		},
 		{
 			name: "different types of elements",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				l := NewList()
 
 				l.PushFront(10) // [10]
@@ -97,6 +101,7 @@ func TestList(t *testing.T) {
 		{
 			name: "check values",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				l := NewList()
 
 				l.PushFront(10) // [10]
@@ -108,12 +113,12 @@ func TestList(t *testing.T) {
 					elems = append(elems, i.Value.(int))
 				}
 				require.Equal(t, []int{10, 20, 30}, elems)
-
 			},
 		},
 		{
 			name: "remove middle",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				l := NewList()
 
 				l.PushFront(10) // [10]
@@ -130,12 +135,12 @@ func TestList(t *testing.T) {
 				require.Nil(t, item.Prev.Prev)
 				require.Equal(t, 30, item.Next.Value)
 				require.Nil(t, item.Next.Next.Next)
-
 			},
 		},
 		{
 			name: "remove all",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				l := NewList()
 
 				l.PushFront(10) // [10]
@@ -148,13 +153,13 @@ func TestList(t *testing.T) {
 
 				require.Nil(t, l.Front())
 				require.Nil(t, l.Back())
-
 			},
 		},
 
 		{
 			name: "move to front",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				l := NewList()
 
 				l.PushFront(10) // [10]
@@ -179,6 +184,7 @@ func TestList(t *testing.T) {
 		{
 			name: "complex",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				l := NewList()
 
 				l.PushFront(10) // [10]

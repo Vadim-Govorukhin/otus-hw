@@ -8,9 +8,6 @@ type Cache interface {
 	Set(key Key, value interface{}) bool // Добавить значение в кэш по ключу
 	Get(key Key) (interface{}, bool)     // Получить значение из кэша по ключу
 	Clear()                              // Очистить кэш.
-
-	///////////// Удалить
-	GetQueueValues() []interface{} // Для тестов
 }
 
 type lruCache struct {

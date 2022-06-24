@@ -17,6 +17,7 @@ func TestCache(t *testing.T) {
 		{
 			name: "empty cache",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				c := NewCache(10)
 
 				val, ok := c.Get("aaa")
@@ -31,6 +32,7 @@ func TestCache(t *testing.T) {
 		{
 			name: "add to cache",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				c := NewCache(2)
 
 				wasInCache := c.Set("aaa", 100)
@@ -44,6 +46,7 @@ func TestCache(t *testing.T) {
 		{
 			name: "rewrite item",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				c := NewCache(2)
 
 				c.Set("aaa", 100)
@@ -59,15 +62,12 @@ func TestCache(t *testing.T) {
 		{
 			name: "overflow cache",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				c := NewCache(2)
 
 				c.Set("aaa", 1) // [1]
 				c.Set("bbb", 2) // [2, 1]
 				c.Set("ccc", 3) // [3, 2]
-
-				elems := c.GetQueueValues()
-				require.Equal(t, 2, len(elems))
-				require.Equal(t, []interface{}{3, 2}, elems)
 
 				val, ok := c.Get("aaa")
 				require.False(t, ok)
@@ -85,6 +85,7 @@ func TestCache(t *testing.T) {
 		{
 			name: "clear cache",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				c := NewCache(2)
 
 				c.Set("aaa", 1)
@@ -103,6 +104,7 @@ func TestCache(t *testing.T) {
 		{
 			name: "different types of elements",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				c := NewCache(2)
 
 				c.Set("aaa", 1)
@@ -120,6 +122,7 @@ func TestCache(t *testing.T) {
 		{
 			name: "simple",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				c := NewCache(5)
 
 				wasInCache := c.Set("aaa", 100)
@@ -139,10 +142,6 @@ func TestCache(t *testing.T) {
 				wasInCache = c.Set("aaa", 300) // [300, 200]
 				require.True(t, wasInCache)
 
-				elems := c.GetQueueValues()
-				require.Equal(t, 2, len(elems))
-				require.Equal(t, []interface{}{300, 200}, elems)
-
 				val, wasInCache = c.Get("aaa")
 				require.True(t, wasInCache)
 				require.Equal(t, 300, val)
@@ -155,16 +154,13 @@ func TestCache(t *testing.T) {
 		{
 			name: "purge logic",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				c := NewCache(3)
 
 				c.Set("aaa", 100)
 				c.Set("bbb", 200)
 				c.Set("ccc", 300)
 				c.Set("bbb", 400) // [400, 300, 100]
-
-				elems := c.GetQueueValues()
-				require.Equal(t, 3, len(elems))
-				require.Equal(t, []interface{}{400, 300, 100}, elems)
 
 				val, ok := c.Get("aaa") // [100, 400, 300]
 				require.True(t, ok)
@@ -182,16 +178,8 @@ func TestCache(t *testing.T) {
 				require.False(t, ok)
 				require.Nil(t, val)
 
-				elems = c.GetQueueValues()
-				require.Equal(t, 3, len(elems))
-				require.Equal(t, []interface{}{300, 400, 100}, elems)
-
 				c.Set("ddd", 500)
 				c.Set("aaa", 600)
-
-				elems = c.GetQueueValues()
-				require.Equal(t, 3, len(elems))
-				require.Equal(t, []interface{}{600, 500, 300}, elems)
 
 				val, ok = c.Get("aaa")
 				require.True(t, ok)
@@ -208,7 +196,6 @@ func TestCache(t *testing.T) {
 				val, ok = c.Get("ddd")
 				require.True(t, ok)
 				require.Equal(t, 500, val)
-
 			},
 		},
 	}
@@ -226,6 +213,7 @@ func TestCacheMultithreading(t *testing.T) {
 		{
 			name: "simple",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				c := NewCache(1_0000)
 				wg := &sync.WaitGroup{}
 				var mu sync.Mutex
@@ -248,6 +236,7 @@ func TestCacheMultithreading(t *testing.T) {
 		{
 			name: "complex",
 			runfunc: func(t *testing.T) {
+				t.Helper()
 				c := NewCache(10)
 				wg := &sync.WaitGroup{}
 				wg.Add(2)
@@ -279,5 +268,4 @@ func TestCacheMultithreading(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, tc.runfunc)
 	}
-
 }
