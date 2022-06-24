@@ -11,7 +11,6 @@ type Cache interface {
 
 	///////////// Удалить
 	GetQueueValues() []interface{} // Для тестов
-	GetItemsKeys() []string        // Для тестов
 }
 
 type lruCache struct {
@@ -82,12 +81,4 @@ func (c *lruCache) GetQueueValues() []interface{} {
 		elems = append(elems, i.Value)
 	}
 	return elems
-}
-
-func (c *lruCache) GetItemsKeys() []string {
-	var keys []string
-	for key := range c.items {
-		keys = append(keys, string(key))
-	}
-	return keys
 }

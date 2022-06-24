@@ -51,8 +51,8 @@ func TestCache(t *testing.T) {
 				wasInCache := c.Set("aaa", 1)
 				require.True(t, wasInCache)
 
-				val, ok := c.Get("aaa")
-				require.True(t, ok)
+				val, wasInCache := c.Get("aaa")
+				require.True(t, wasInCache)
 				require.Equal(t, 1, val)
 			},
 		},
@@ -91,12 +91,12 @@ func TestCache(t *testing.T) {
 				c.Set("bbb", 2)
 				c.Clear()
 
-				val, ok := c.Get("aaa")
-				require.False(t, ok)
+				val, wasInCache := c.Get("aaa")
+				require.False(t, wasInCache)
 				require.Nil(t, val)
 
-				val, ok = c.Get("bbb")
-				require.False(t, ok)
+				val, wasInCache = c.Get("bbb")
+				require.False(t, wasInCache)
 				require.Nil(t, val)
 			},
 		},
@@ -108,12 +108,12 @@ func TestCache(t *testing.T) {
 				c.Set("aaa", 1)
 				c.Set("это тест", "и это тест")
 
-				val, ok := c.Get("aaa")
-				require.True(t, ok)
+				val, wasInCache := c.Get("aaa")
+				require.True(t, wasInCache)
 				require.Equal(t, 1, val)
 
-				val, ok = c.Get("это тест")
-				require.True(t, ok)
+				val, wasInCache = c.Get("это тест")
+				require.True(t, wasInCache)
 				require.Equal(t, "и это тест", val)
 			},
 		},
@@ -128,12 +128,12 @@ func TestCache(t *testing.T) {
 				wasInCache = c.Set("bbb", 200)
 				require.False(t, wasInCache)
 
-				val, ok := c.Get("aaa") // [100, 200]
-				require.True(t, ok)
+				val, wasInCache := c.Get("aaa") // [100, 200]
+				require.True(t, wasInCache)
 				require.Equal(t, 100, val)
 
-				val, ok = c.Get("bbb") // [200, 100]
-				require.True(t, ok)
+				val, wasInCache = c.Get("bbb") // [200, 100]
+				require.True(t, wasInCache)
 				require.Equal(t, 200, val)
 
 				wasInCache = c.Set("aaa", 300) // [300, 200]
@@ -143,12 +143,12 @@ func TestCache(t *testing.T) {
 				require.Equal(t, 2, len(elems))
 				require.Equal(t, []interface{}{300, 200}, elems)
 
-				val, ok = c.Get("aaa")
-				require.True(t, ok)
+				val, wasInCache = c.Get("aaa")
+				require.True(t, wasInCache)
 				require.Equal(t, 300, val)
 
-				val, ok = c.Get("ccc")
-				require.False(t, ok)
+				val, wasInCache = c.Get("ccc")
+				require.False(t, wasInCache)
 				require.Nil(t, val)
 			},
 		},
@@ -226,23 +226,21 @@ func TestCacheMultithreading(t *testing.T) {
 		{
 			name: "simple",
 			runfunc: func(t *testing.T) {
-				c := NewCache(10)
+				c := NewCache(1_0000)
 				wg := &sync.WaitGroup{}
-				wg.Add(2)
+				var mu sync.Mutex
 
-				go func() {
-					defer wg.Done()
-					for i := 0; i < 1_000; i++ {
+				for i := 0; i < 1_000; i++ {
+					wg.Add(1)
+					go func(i int) {
+						defer wg.Done()
+						mu.Lock()
 						c.Set(Key("a"), i)
-					}
-				}()
-
-				go func() {
-					defer wg.Done()
-					for i := 0; i < 1_000; i++ {
-						c.Get(Key("a"))
-					}
-				}()
+						val, _ := c.Get(Key("a"))
+						require.Equal(t, i, val)
+						mu.Unlock()
+					}(i)
+				}
 
 				wg.Wait()
 			},
@@ -263,8 +261,13 @@ func TestCacheMultithreading(t *testing.T) {
 
 				go func() {
 					defer wg.Done()
+					var num int
 					for i := 0; i < 1_000_000; i++ {
-						c.Get(Key(strconv.Itoa(rand.Intn(1_000_000))))
+						num = rand.Intn(1_000_000)
+						val, wasIsCache := c.Get(Key(strconv.Itoa(num)))
+						if wasIsCache {
+							require.Equal(t, num, val)
+						}
 					}
 				}()
 
