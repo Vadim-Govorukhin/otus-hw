@@ -26,8 +26,8 @@ func NewListItem(v interface{}, next, prev *ListItem) *ListItem {
 
 type list struct {
 	length int       // Размер списка
-	front  *ListItem // Первый элемент
-	back   *ListItem // Последний элемент
+	front  *ListItem // Начальный элемент списка (заглушка)
+	back   *ListItem // Конечный элемент списка (заглушка)
 }
 
 func NewList() List {
@@ -78,11 +78,15 @@ func (l *list) Remove(i *ListItem) {
 }
 
 func (l *list) MoveToFront(i *ListItem) {
-	l.Remove(i)
+	// Remove i
+	i.Prev.Next = i.Next
+	i.Next.Prev = i.Prev
 
+	// Move i to front
 	i.Next = l.front.Next
 	i.Prev = l.front
+
+	// Move front
 	l.front.Next.Prev = i
 	l.front.Next = i
-	l.length++
 }

@@ -32,7 +32,19 @@ func TestList(t *testing.T) {
 				require.Equal(t, 10, item.Value)
 				require.Nil(t, item.Prev.Prev)
 				require.Nil(t, item.Next.Next)
+			},
+		},
+		{
+			name: "pushfront",
+			runfunc: func(t *testing.T) {
+				l := NewList()
 
+				l.PushFront(10) // [10]
+				require.Equal(t, 1, l.Len())
+				item := l.Front()
+				require.Equal(t, 10, item.Value)
+				require.Nil(t, item.Prev.Prev)
+				require.Nil(t, item.Next.Next)
 			},
 		},
 		{
@@ -63,6 +75,23 @@ func TestList(t *testing.T) {
 				require.Equal(t, 100, item.Next.Value)
 				require.Nil(t, item.Next.Next.Next)
 
+			},
+		},
+		{
+			name: "different types of elements",
+			runfunc: func(t *testing.T) {
+				l := NewList()
+
+				l.PushFront(10) // [10]
+				l.PushFront(nil)
+				item := l.Front()
+				require.Nil(t, item.Value)
+				l.PushFront(1.1)
+				item = l.Front()
+				require.Equal(t, 1.1, item.Value)
+				l.PushFront("aaa")
+				item = l.Front()
+				require.Equal(t, "aaa", item.Value)
 			},
 		},
 		{
@@ -104,6 +133,25 @@ func TestList(t *testing.T) {
 
 			},
 		},
+		{
+			name: "remove all",
+			runfunc: func(t *testing.T) {
+				l := NewList()
+
+				l.PushFront(10) // [10]
+				l.PushBack(20)  // [10, 20]
+
+				item := l.Front() // 20
+				l.Remove(item)    // [10]
+				item = l.Front()  // 10
+				l.Remove(item)    // []
+
+				require.Nil(t, l.Front())
+				require.Nil(t, l.Back())
+
+			},
+		},
+
 		{
 			name: "move to front",
 			runfunc: func(t *testing.T) {

@@ -36,27 +36,24 @@ func NewCache(capacity int) Cache {
 func (c *lruCache) Set(key Key, value interface{}) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	_, ok := c.items[key]
+	_, inCache := c.items[key]
 
-	if ok {
-		c.items[key].Value = value
+	if inCache {
+		c.items[key].Value = cacheItem{key, value}
 		c.queue.MoveToFront(c.items[key])
-		return ok
+
+		return inCache
 	}
-	item := c.queue.PushFront(value)
-	c.items[key] = item
-	if c.queue.Len() > c.capacity {
+
+	if c.queue.Len() == c.capacity {
 		deleteitem := c.queue.Back()
 		c.queue.Remove(deleteitem)
-		for deletekey, val := range c.items {
-			if val == deleteitem {
-				delete(c.items, deletekey)
-				break
-			}
-		}
+		delete(c.items, deleteitem.Value.(cacheItem).key)
 	}
 
-	return ok
+	item := c.queue.PushFront(cacheItem{key, value})
+	c.items[key] = item
+	return inCache
 }
 
 func (c *lruCache) Get(key Key) (interface{}, bool) {
@@ -65,12 +62,14 @@ func (c *lruCache) Get(key Key) (interface{}, bool) {
 	item, ok := c.items[key]
 	if ok {
 		c.queue.MoveToFront(item)
-		return item.Value, ok
+		return item.Value.(cacheItem).value, ok
 	}
 	return nil, ok
 }
 
 func (c *lruCache) Clear() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.queue = NewList()
 	c.items = make(map[Key]*ListItem, c.capacity)
 }
@@ -78,7 +77,7 @@ func (c *lruCache) Clear() {
 func (c *lruCache) GetQueueValues() []interface{} {
 	var elems []interface{}
 	for i := c.queue.Front(); i.Next != nil; i = i.Next {
-		elems = append(elems, i.Value)
+		elems = append(elems, i.Value.(cacheItem).value)
 	}
 	return elems
 }
