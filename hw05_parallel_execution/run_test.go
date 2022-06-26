@@ -24,7 +24,7 @@ func TestRun(t *testing.T) {
 		for i := 0; i < tasksCount; i++ {
 			err := fmt.Errorf("error from task %d", i)
 			tasks = append(tasks, func() error {
-				time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
+				time.Sleep(time.Millisecond * time.Duration(rand.Intn(50)))
 				atomic.AddInt32(&runTasksCount, 1)
 				return err
 			})
