@@ -11,11 +11,7 @@ var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
 type Task func() error
 
 func Run(tasks []Task, n, m int) error {
-	overLimit := make(chan struct{})
-	//defer close(overLimit)
-
-	task := make(chan func() error)
-	defer close(task)
+	done := make(chan struct{})
 
 	errors := make(chan error)
 	defer close(errors)
@@ -23,68 +19,64 @@ func Run(tasks []Task, n, m int) error {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
+	task := make(chan func() error)
+	defer close(task)
+
 	var ignoreErrors bool
 	if m <= 0 {
+		// workers continue working in case error
 		ignoreErrors = true
 	}
 
+	// create n workers
 	for i := 0; i < n; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
 			for {
-				select {
-				case <-overLimit:
-					fmt.Printf("\t[goroutine %d] end by chanel 'overlimit' \n", i)
+				t, ok := <-task
+				if !ok {
+					fmt.Printf("\t[goroutine %d] end by chanel 'task' \n", i)
 					return
-				case t, ok := <-task:
-					if !ok {
-						fmt.Printf("\t[goroutine %d] end by chanel 'task' \n", i)
+				}
+				fmt.Printf("[goroutine %d] run task\n", i)
+				err := t()
+				if err != nil {
+					fmt.Printf("[goroutine %d] end with error: %s\n", i, err)
+					errors <- err
+					fmt.Printf("[goroutine %d] send error: %s\n", i, err)
+					if !ignoreErrors {
 						return
 					}
-					fmt.Printf("[goroutine %d] run task\n", i)
-					err := t()
-					if err != nil {
-						fmt.Printf("[goroutine %d] end with error: %s\n", i, err)
-						errors <- err
-						fmt.Printf("[goroutine %d] send error: %s\n", i, err)
-						if !ignoreErrors {
-							return
-						}
-					}
-					fmt.Printf("\t[goroutine %d] end task\n", i)
 				}
+				fmt.Printf("\t[goroutine %d] end task\n", i)
 			}
 		}(i) // i для отлаживания
 	}
 
-	go func(m, n int) {
+	// goroutine for catching errors
+	go func() {
 		var curErrorNum int
 		for range errors {
-			fmt.Println("[overlimit goroutine] receive 1 error")
 			curErrorNum++
 			if curErrorNum == m {
-				fmt.Println("[overlimit goroutine] limit m, close chanel")
-				close(overLimit)
+				fmt.Println("[done goroutine] limit m, close chanel")
+				close(done) //but continue receive errors from still working workers
 			}
 		}
-		fmt.Println("[overlimit goroutine] not limit m, return")
-	}(m, n)
+	}()
 
-	fmt.Println("[main] start sending tasks")
-	var sendTaski int
-	for {
+	for i := 0; i < len(tasks); {
 		select {
-		case <-overLimit:
+		case <-done:
 			return ErrErrorsLimitExceeded
-		case task <- tasks[sendTaski]:
+		case task <- tasks[i]:
 			fmt.Println("[main] send task")
-			sendTaski++
-			if sendTaski == len(tasks) {
-				close(overLimit)
-				fmt.Println("[main] all tasks is done")
-				return nil
-			}
+			i++
 		}
 	}
+
+	close(done)
+	fmt.Println("[main] all tasks is done")
+	return nil
 }

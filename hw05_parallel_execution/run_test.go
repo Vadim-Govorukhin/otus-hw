@@ -45,7 +45,6 @@ func TestRun(t *testing.T) {
 	t.Run("if were errors in first M tasks, than finished not more N+M tasks", func(t *testing.T) {
 		tc := testConfig{50, 23, 10}
 		tasks := make([]Task, 0, tc.tasksCount)
-
 		var runTasksCount int32
 
 		_, tasks = prepareTasks(tc.tasksCount, tasks, &runTasksCount, true)
@@ -59,7 +58,6 @@ func TestRun(t *testing.T) {
 	t.Run("tasks without errors", func(t *testing.T) {
 		tc := testConfig{50, 5, 1}
 		tasks := make([]Task, 0, tc.tasksCount)
-
 		var runTasksCount int32
 
 		sumTime, tasks := prepareTasks(tc.tasksCount, tasks, &runTasksCount, false)
@@ -76,7 +74,6 @@ func TestRun(t *testing.T) {
 	t.Run("m <= 0, with errors", func(t *testing.T) {
 		tc := testConfig{50, 5, -1}
 		tasks := make([]Task, 0, tc.tasksCount)
-
 		var runTasksCount int32
 
 		sumTime, tasks := prepareTasks(tc.tasksCount, tasks, &runTasksCount, true)
