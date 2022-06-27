@@ -21,14 +21,17 @@ func Run(tasks []Task, n, m int) error {
 	defer close(errors)
 
 	var wg sync.WaitGroup
+	defer wg.Wait()
 
 	var ignoreErrors bool
-	fmt.Println("[main] rum goroutines")
+	if m <= 0 {
+		ignoreErrors = true
+	}
+
 	for i := 0; i < n; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			fmt.Printf("[goroutine %d] start\n", i)
 			for {
 				select {
 				case <-overLimit:
@@ -46,30 +49,23 @@ func Run(tasks []Task, n, m int) error {
 						errors <- err
 						fmt.Printf("[goroutine %d] send error: %s\n", i, err)
 						if !ignoreErrors {
-							return // Надо ли?
+							return
 						}
 					}
 					fmt.Printf("\t[goroutine %d] end task\n", i)
 				}
 			}
-		}(i) // i для отлажевания
+		}(i) // i для отлаживания
 	}
 
 	go func(m, n int) {
-		fmt.Println("[overlimit goroutine] starts")
-		if m <= 0 {
-			ignoreErrors = true
-			fmt.Println("[overlimit goroutine] TODO")
-		}
 		var curErrorNum int
 		for range errors {
 			fmt.Println("[overlimit goroutine] receive 1 error")
 			curErrorNum++
-			//if (curErrorNum == m) || (curErrorNum == n) {
 			if curErrorNum == m {
 				fmt.Println("[overlimit goroutine] limit m, close chanel")
 				close(overLimit)
-				//return
 			}
 		}
 		fmt.Println("[overlimit goroutine] not limit m, return")
@@ -79,19 +75,13 @@ func Run(tasks []Task, n, m int) error {
 	var sendTaski int
 	for {
 		select {
-		case _, ok := <-overLimit:
-			if !ok {
-				fmt.Println("\t[main] overlimit, waiting")
-				wg.Wait()
-				fmt.Println("\t[main] return ErrErrorsLimitExceeded")
-				return ErrErrorsLimitExceeded
-			}
+		case <-overLimit:
+			return ErrErrorsLimitExceeded
 		case task <- tasks[sendTaski]:
 			fmt.Println("[main] send task")
 			sendTaski++
 			if sendTaski == len(tasks) {
 				close(overLimit)
-				wg.Wait()
 				fmt.Println("[main] all tasks is done")
 				return nil
 			}
