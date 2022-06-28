@@ -10,19 +10,39 @@ var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
 
 type Task func() error
 
+func handleDoneTasks(curDoneTaskNum, n int, doneFlag bool, done *chan struct{}) (int, bool) {
+	curDoneTaskNum++
+	if !doneFlag && (curDoneTaskNum == n) {
+		fmt.Println("[doneTask goroutine] none of tasks is running, close chanel 'done'")
+		doneFlag = true
+		close(*done)
+	}
+	return curDoneTaskNum, doneFlag
+}
+
+func handleErrors(curErrorNum, m int, doneFlag bool, done *chan struct{}) (int, bool) {
+	curErrorNum++
+	if !doneFlag && (curErrorNum == m) {
+		fmt.Println("[handleError goroutine] limit m, close chanel 'done'")
+		doneFlag = true
+		close(*done) // but continue receive errors from still working workers
+	}
+	return curErrorNum, doneFlag
+}
+
 func Run(tasks []Task, n, m int) error {
 	fmt.Println("====================== NEW =====================")
-	done := make(chan struct{})
+	done := make(chan struct{}) // channel for stop work
 
-	closeTask := make(chan struct{})
+	closeTask := make(chan struct{}) // channel for handle fallen workers
 	defer close(closeTask)
-	errors := make(chan error)
+	errors := make(chan error) // channel for handle errors
 	defer close(errors)
 
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	task := make(chan func() error)
+	task := make(chan func() error) // channel for giving tasks to workers
 	defer close(task)
 
 	var ignoreErrors bool
@@ -49,38 +69,28 @@ func Run(tasks []Task, n, m int) error {
 					errors <- err
 					fmt.Printf("[goroutine %d] send error: %s\n", i, err)
 					if !ignoreErrors {
+						fmt.Printf("\t[goroutine %d] end by error \n", i)
 						return
 					}
 				}
 			}
-		}(i) // i для отлаживания
+		}(i)
 	}
 
-	// goroutine for catching errors
-	var doneFlag bool
+	// goroutine for handling errors
+	var doneFlag bool // flag of close channel 'done' or not
 	go func() {
 		var curErrorNum int
 		for range errors {
-			curErrorNum++
-			if !doneFlag && (curErrorNum == m) {
-				fmt.Println("[done goroutine] limit m, close chanel")
-				doneFlag = true
-				close(done) //but continue receive errors from still working workers
-			}
+			curErrorNum, doneFlag = handleErrors(curErrorNum, m, doneFlag, &done)
 		}
 	}()
 
-	// goroutine for catching stopped goroutines
+	// goroutine for handling falling goroutines
 	go func() {
 		var curDoneTaskNum int
 		for range closeTask {
-			curDoneTaskNum++
-			if !doneFlag && (curDoneTaskNum == n) {
-				fmt.Println("[done goroutine] none of tasks is running, close chanel")
-				doneFlag = true
-				close(done)
-				return
-			}
+			curDoneTaskNum, doneFlag = handleDoneTasks(curDoneTaskNum, n, doneFlag, &done)
 		}
 	}()
 
@@ -94,8 +104,8 @@ func Run(tasks []Task, n, m int) error {
 		}
 	}
 
-	close(done)
 	doneFlag = true
+	close(done)
 	fmt.Println("[main] all tasks is done")
 	return nil
 }
