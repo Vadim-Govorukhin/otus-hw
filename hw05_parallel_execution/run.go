@@ -79,10 +79,13 @@ func Run(tasks []Task, n, m int) error {
 
 	// goroutine for handling errors
 	var doneFlag bool // flag of close channel 'done' or not
+	var mu sync.Mutex
 	go func() {
 		var curErrorNum int
 		for range errors {
+			mu.Lock() // remove race
 			curErrorNum, doneFlag = handleErrors(curErrorNum, m, doneFlag, &done)
+			mu.Unlock()
 		}
 	}()
 
@@ -90,7 +93,9 @@ func Run(tasks []Task, n, m int) error {
 	go func() {
 		var curDoneTaskNum int
 		for range closeTask {
+			mu.Lock() // remove race
 			curDoneTaskNum, doneFlag = handleDoneTasks(curDoneTaskNum, n, doneFlag, &done)
+			mu.Unlock()
 		}
 	}()
 
@@ -104,7 +109,9 @@ func Run(tasks []Task, n, m int) error {
 		}
 	}
 
+	mu.Lock() // remove race
 	doneFlag = true
+	mu.Unlock()
 	close(done)
 	fmt.Println("[main] all tasks is done")
 	return nil
