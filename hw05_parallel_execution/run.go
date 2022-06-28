@@ -11,6 +11,7 @@ var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
 type Task func() error
 
 func Run(tasks []Task, n, m int) error {
+	fmt.Println("====================== NEW =====================")
 	done := make(chan struct{})
 
 	errors := make(chan error)
@@ -29,10 +30,18 @@ func Run(tasks []Task, n, m int) error {
 	}
 
 	// create n workers
+	var mu sync.Mutex
+	runningGoroutines := n
 	for i := 0; i < n; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
+			defer func() {
+				mu.Lock()
+				runningGoroutines--
+				fmt.Println("runningGoroutines: ", runningGoroutines)
+				mu.Unlock()
+			}()
 			for {
 				t, ok := <-task
 				if !ok {
@@ -55,12 +64,14 @@ func Run(tasks []Task, n, m int) error {
 	}
 
 	// goroutine for catching errors
+	var flag bool
 	go func() {
 		var curErrorNum int
 		for range errors {
 			curErrorNum++
-			if curErrorNum == m {
+			if !flag && ((curErrorNum == m) || (runningGoroutines == 0)) {
 				fmt.Println("[done goroutine] limit m, close chanel")
+				flag = true
 				close(done) //but continue receive errors from still working workers
 			}
 		}
@@ -77,6 +88,7 @@ func Run(tasks []Task, n, m int) error {
 	}
 
 	close(done)
+	flag = true
 	fmt.Println("[main] all tasks is done")
 	return nil
 }

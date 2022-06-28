@@ -12,6 +12,13 @@ import (
 	"go.uber.org/goleak"
 )
 
+type testConfig struct {
+	tasksCount     int
+	workersCount   int
+	maxErrorsCount int
+	errors         bool
+}
+
 func prepareTasks(tasksCount int, tasks []Task, runTasksCount *int32, errors bool) (time.Duration, []Task) {
 	var sumTime time.Duration
 
@@ -33,21 +40,15 @@ func prepareTasks(tasksCount int, tasks []Task, runTasksCount *int32, errors boo
 	return sumTime, tasks
 }
 
-type testConfig struct {
-	tasksCount     int
-	workersCount   int
-	maxErrorsCount int
-}
-
 func TestRun(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
 	t.Run("if were errors in first M tasks, than finished not more N+M tasks", func(t *testing.T) {
-		tc := testConfig{50, 23, 10}
+		tc := testConfig{50, 23, 10, true}
 		tasks := make([]Task, 0, tc.tasksCount)
 		var runTasksCount int32
 
-		_, tasks = prepareTasks(tc.tasksCount, tasks, &runTasksCount, true)
+		_, tasks = prepareTasks(tc.tasksCount, tasks, &runTasksCount, tc.errors)
 
 		err := Run(tasks, tc.workersCount, tc.maxErrorsCount)
 
@@ -56,11 +57,11 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("tasks without errors", func(t *testing.T) {
-		tc := testConfig{50, 5, 1}
+		tc := testConfig{50, 23, 1, false}
 		tasks := make([]Task, 0, tc.tasksCount)
 		var runTasksCount int32
 
-		sumTime, tasks := prepareTasks(tc.tasksCount, tasks, &runTasksCount, false)
+		sumTime, tasks := prepareTasks(tc.tasksCount, tasks, &runTasksCount, tc.errors)
 
 		start := time.Now()
 		err := Run(tasks, tc.workersCount, tc.maxErrorsCount)
@@ -72,11 +73,11 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("m <= 0, with errors", func(t *testing.T) {
-		tc := testConfig{50, 5, -1}
+		tc := testConfig{50, 5, -1, true}
 		tasks := make([]Task, 0, tc.tasksCount)
 		var runTasksCount int32
 
-		sumTime, tasks := prepareTasks(tc.tasksCount, tasks, &runTasksCount, true)
+		sumTime, tasks := prepareTasks(tc.tasksCount, tasks, &runTasksCount, tc.errors)
 
 		start := time.Now()
 		err := Run(tasks, tc.workersCount, tc.maxErrorsCount)
@@ -85,6 +86,51 @@ func TestRun(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, runTasksCount, int32(tc.tasksCount), "not all tasks were completed")
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
+	})
+
+	t.Run("n=1, without errors", func(t *testing.T) {
+		tc := testConfig{10, 1, 1, false}
+		tasks := make([]Task, 0, tc.tasksCount)
+		var runTasksCount int32
+
+		sumTime, tasks := prepareTasks(tc.tasksCount, tasks, &runTasksCount, tc.errors)
+
+		start := time.Now()
+		err := Run(tasks, tc.workersCount, tc.maxErrorsCount)
+		elapsedTime := time.Since(start)
+
+		require.NoError(t, err)
+		require.Equal(t, runTasksCount, int32(tc.tasksCount), "not all tasks were completed")
+		require.LessOrEqual(t, int64(sumTime), int64(elapsedTime), "tasks were not run sequentially?")
+	})
+
+	t.Run("Num tasks = m errors", func(t *testing.T) {
+		tc := testConfig{10, 10, 10, true}
+		//tc := testConfig{10, 11, 10, true}
+		tasks := make([]Task, 0, tc.tasksCount)
+		var runTasksCount int32
+
+		_, tasks = prepareTasks(tc.tasksCount, tasks, &runTasksCount, tc.errors)
+
+		err := Run(tasks, tc.workersCount, tc.maxErrorsCount)
+
+		require.NoError(t, err)
+		require.Equal(t, runTasksCount, int32(tc.tasksCount), "not all tasks were completed")
+		require.LessOrEqual(t, runTasksCount, int32(tc.workersCount+tc.maxErrorsCount), "extra tasks were started")
+	})
+
+	t.Run("workers more than tasks", func(t *testing.T) {
+		tc := testConfig{10, 15, 1, false}
+		tasks := make([]Task, 0, tc.tasksCount)
+		var runTasksCount int32
+
+		_, tasks = prepareTasks(tc.tasksCount, tasks, &runTasksCount, tc.errors)
+
+		err := Run(tasks, tc.workersCount, tc.maxErrorsCount)
+
+		require.NoError(t, err)
+		require.Equal(t, runTasksCount, int32(tc.tasksCount), "not all tasks were completed")
+		require.LessOrEqual(t, runTasksCount, int32(tc.workersCount+tc.maxErrorsCount), "extra tasks were started")
 	})
 
 }
