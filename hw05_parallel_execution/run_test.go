@@ -106,7 +106,6 @@ func TestRun(t *testing.T) {
 
 	t.Run("Num tasks = m errors", func(t *testing.T) {
 		tc := testConfig{10, 10, 10, true}
-		//tc := testConfig{10, 11, 10, true}
 		tasks := make([]Task, 0, tc.tasksCount)
 		var runTasksCount int32
 
@@ -133,4 +132,48 @@ func TestRun(t *testing.T) {
 		require.LessOrEqual(t, runTasksCount, int32(tc.workersCount+tc.maxErrorsCount), "extra tasks were started")
 	})
 
+	t.Run("workers less than tasks", func(t *testing.T) {
+		tc := testConfig{50, 10, 25, true}
+		tasks := make([]Task, 0, tc.tasksCount)
+		var runTasksCount int32
+
+		_, tasks = prepareTasks(tc.tasksCount, tasks, &runTasksCount, tc.errors)
+
+		err := Run(tasks, tc.workersCount, tc.maxErrorsCount)
+
+		require.Truef(t, errors.Is(err, ErrErrorsLimitExceeded), "actual err - %v", err)
+		require.Equal(t, runTasksCount, int32(tc.workersCount))
+	})
+
+	t.Run("tasks with errors less then M", func(t *testing.T) {
+		tc := testConfig{50, 10, 10, false}
+		tasks := make([]Task, 0, tc.tasksCount)
+		var runTasksCount int32
+
+		errorsCount := 0
+		for i := 0; i < tc.tasksCount; i++ {
+			err := fmt.Errorf("error from task %d", i)
+			taskSleep := time.Millisecond * time.Duration(rand.Intn(100))
+
+			if errorsCount < (tc.maxErrorsCount - 5) {
+				tasks = append(tasks, func() error {
+					time.Sleep(taskSleep)
+					atomic.AddInt32(&runTasksCount, 1)
+					return err
+				})
+			} else {
+				tasks = append(tasks, func() error {
+					time.Sleep(taskSleep)
+					atomic.AddInt32(&runTasksCount, 1)
+					return nil
+				})
+			}
+			errorsCount++
+		}
+
+		result := Run(tasks, tc.workersCount, tc.maxErrorsCount)
+
+		require.NotEqual(t, ErrErrorsLimitExceeded, result)
+		require.LessOrEqual(t, runTasksCount, int32(tc.tasksCount), "all tasks were started")
+	})
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 )
 
 var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
@@ -30,18 +31,12 @@ func Run(tasks []Task, n, m int) error {
 	}
 
 	// create n workers
-	var mu sync.Mutex
-	runningGoroutines := n
+	runningGoroutines := int32(n)
 	for i := 0; i < n; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			defer func() {
-				mu.Lock()
-				runningGoroutines--
-				fmt.Println("runningGoroutines: ", runningGoroutines)
-				mu.Unlock()
-			}()
+			defer func() { atomic.AddInt32(&runningGoroutines, -1) }()
 			for {
 				t, ok := <-task
 				if !ok {
@@ -51,14 +46,12 @@ func Run(tasks []Task, n, m int) error {
 				fmt.Printf("[goroutine %d] run task\n", i)
 				err := t()
 				if err != nil {
-					fmt.Printf("[goroutine %d] end with error: %s\n", i, err)
 					errors <- err
 					fmt.Printf("[goroutine %d] send error: %s\n", i, err)
 					if !ignoreErrors {
 						return
 					}
 				}
-				fmt.Printf("\t[goroutine %d] end task\n", i)
 			}
 		}(i) // i для отлаживания
 	}
@@ -68,6 +61,8 @@ func Run(tasks []Task, n, m int) error {
 	go func() {
 		var curErrorNum int
 		for range errors {
+
+			fmt.Println("[done goroutine] error +1")
 			curErrorNum++
 			if !flag && ((curErrorNum == m) || (runningGoroutines == 0)) {
 				fmt.Println("[done goroutine] limit m, close chanel")
