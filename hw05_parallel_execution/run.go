@@ -10,24 +10,24 @@ var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
 
 type Task func() error
 
-func handleDoneTasks(curDoneTaskNum, n int, doneFlag bool, done *chan struct{}) (int, bool) {
-	curDoneTaskNum++
-	if !doneFlag && (curDoneTaskNum == n) {
-		fmt.Println("[doneTask goroutine] none of tasks is running, close chanel 'done'")
+func handleDoneWorkers(doneWorkersNum, n int, doneFlag bool, done *chan struct{}) (int, bool) {
+	doneWorkersNum++
+	if !doneFlag && (doneWorkersNum == n) {
+		fmt.Println("[doneworkers goroutine] none of workers is running, close chanel 'done'")
 		doneFlag = true
 		close(*done)
 	}
-	return curDoneTaskNum, doneFlag
+	return doneWorkersNum, doneFlag
 }
 
-func handleErrors(curErrorNum, m int, doneFlag bool, done *chan struct{}) (int, bool) {
-	curErrorNum++
-	if !doneFlag && (curErrorNum == m) {
+func handleErrors(errorsNum, m int, doneFlag bool, done *chan struct{}) (int, bool) {
+	errorsNum++
+	if !doneFlag && (errorsNum == m) {
 		fmt.Println("[handleError goroutine] limit m, close chanel 'done'")
 		doneFlag = true
 		close(*done) // but continue receive errors from still working workers
 	}
-	return curErrorNum, doneFlag
+	return errorsNum, doneFlag
 }
 
 func Run(tasks []Task, n, m int) error {
@@ -81,20 +81,20 @@ func Run(tasks []Task, n, m int) error {
 	var doneFlag bool // flag of close channel 'done' or not
 	var mu sync.Mutex
 	go func() {
-		var curErrorNum int
+		var errorsNum int
 		for range errors {
 			mu.Lock() // remove race
-			curErrorNum, doneFlag = handleErrors(curErrorNum, m, doneFlag, &done)
+			errorsNum, doneFlag = handleErrors(errorsNum, m, doneFlag, &done)
 			mu.Unlock()
 		}
 	}()
 
 	// goroutine for handling falling goroutines
 	go func() {
-		var curDoneTaskNum int
+		var doneWorkersNum int
 		for range closeTask {
 			mu.Lock() // remove race
-			curDoneTaskNum, doneFlag = handleDoneTasks(curDoneTaskNum, n, doneFlag, &done)
+			doneWorkersNum, doneFlag = handleDoneWorkers(doneWorkersNum, n, doneFlag, &done)
 			mu.Unlock()
 		}
 	}()
