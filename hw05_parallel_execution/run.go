@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"sync/atomic"
 )
 
 var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
@@ -15,6 +14,8 @@ func Run(tasks []Task, n, m int) error {
 	fmt.Println("====================== NEW =====================")
 	done := make(chan struct{})
 
+	closeTask := make(chan struct{})
+	defer close(closeTask)
 	errors := make(chan error)
 	defer close(errors)
 
@@ -31,12 +32,11 @@ func Run(tasks []Task, n, m int) error {
 	}
 
 	// create n workers
-	runningGoroutines := int32(n)
 	for i := 0; i < n; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			defer func() { atomic.AddInt32(&runningGoroutines, -1) }()
+			defer func() { closeTask <- struct{}{} }()
 			for {
 				t, ok := <-task
 				if !ok {
@@ -57,17 +57,29 @@ func Run(tasks []Task, n, m int) error {
 	}
 
 	// goroutine for catching errors
-	var flag bool
+	var doneFlag bool
 	go func() {
 		var curErrorNum int
 		for range errors {
-
-			fmt.Println("[done goroutine] error +1")
 			curErrorNum++
-			if !flag && ((curErrorNum == m) || (runningGoroutines == 0)) {
+			if !doneFlag && (curErrorNum == m) {
 				fmt.Println("[done goroutine] limit m, close chanel")
-				flag = true
+				doneFlag = true
 				close(done) //but continue receive errors from still working workers
+			}
+		}
+	}()
+
+	// goroutine for catching stopped goroutines
+	go func() {
+		var curDoneTaskNum int
+		for range closeTask {
+			curDoneTaskNum++
+			if !doneFlag && (curDoneTaskNum == n) {
+				fmt.Println("[done goroutine] none of tasks is running, close chanel")
+				doneFlag = true
+				close(done)
+				return
 			}
 		}
 	}()
@@ -83,7 +95,7 @@ func Run(tasks []Task, n, m int) error {
 	}
 
 	close(done)
-	flag = true
+	doneFlag = true
 	fmt.Println("[main] all tasks is done")
 	return nil
 }

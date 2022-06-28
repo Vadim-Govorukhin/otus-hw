@@ -43,7 +43,7 @@ func prepareTasks(tasksCount int, tasks []Task, runTasksCount *int32, errors boo
 func TestRun(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
-	t.Run("if were errors in first M tasks, than finished not more N+M tasks", func(t *testing.T) {
+	t.Run("1. if were errors in first M tasks, than finished not more N+M tasks", func(t *testing.T) {
 		tc := testConfig{50, 23, 10, true}
 		tasks := make([]Task, 0, tc.tasksCount)
 		var runTasksCount int32
@@ -56,7 +56,7 @@ func TestRun(t *testing.T) {
 		require.LessOrEqual(t, runTasksCount, int32(tc.workersCount+tc.maxErrorsCount), "extra tasks were started")
 	})
 
-	t.Run("tasks without errors", func(t *testing.T) {
+	t.Run("2. tasks without errors", func(t *testing.T) {
 		tc := testConfig{50, 23, 1, false}
 		tasks := make([]Task, 0, tc.tasksCount)
 		var runTasksCount int32
@@ -72,7 +72,7 @@ func TestRun(t *testing.T) {
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
 	})
 
-	t.Run("m <= 0, with errors", func(t *testing.T) {
+	t.Run("3. m <= 0, with errors", func(t *testing.T) {
 		tc := testConfig{50, 5, -1, true}
 		tasks := make([]Task, 0, tc.tasksCount)
 		var runTasksCount int32
@@ -88,7 +88,7 @@ func TestRun(t *testing.T) {
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
 	})
 
-	t.Run("n=1, without errors", func(t *testing.T) {
+	t.Run("4. n=1, without errors", func(t *testing.T) {
 		tc := testConfig{10, 1, 1, false}
 		tasks := make([]Task, 0, tc.tasksCount)
 		var runTasksCount int32
@@ -104,7 +104,7 @@ func TestRun(t *testing.T) {
 		require.LessOrEqual(t, int64(sumTime), int64(elapsedTime), "tasks were not run sequentially?")
 	})
 
-	t.Run("Num tasks = m errors", func(t *testing.T) {
+	t.Run("5. Num tasks = m errors", func(t *testing.T) {
 		tc := testConfig{10, 10, 10, true}
 		tasks := make([]Task, 0, tc.tasksCount)
 		var runTasksCount int32
@@ -118,7 +118,7 @@ func TestRun(t *testing.T) {
 		require.LessOrEqual(t, runTasksCount, int32(tc.workersCount+tc.maxErrorsCount), "extra tasks were started")
 	})
 
-	t.Run("workers more than tasks", func(t *testing.T) {
+	t.Run("6. workers more than tasks", func(t *testing.T) {
 		tc := testConfig{10, 15, 1, false}
 		tasks := make([]Task, 0, tc.tasksCount)
 		var runTasksCount int32
@@ -132,7 +132,7 @@ func TestRun(t *testing.T) {
 		require.LessOrEqual(t, runTasksCount, int32(tc.workersCount+tc.maxErrorsCount), "extra tasks were started")
 	})
 
-	t.Run("workers less than tasks", func(t *testing.T) {
+	t.Run("7. workers less than tasks", func(t *testing.T) {
 		tc := testConfig{50, 10, 25, true}
 		tasks := make([]Task, 0, tc.tasksCount)
 		var runTasksCount int32
@@ -145,7 +145,7 @@ func TestRun(t *testing.T) {
 		require.Equal(t, runTasksCount, int32(tc.workersCount))
 	})
 
-	t.Run("tasks with errors less then M", func(t *testing.T) {
+	t.Run("8. tasks with errors less then M", func(t *testing.T) {
 		tc := testConfig{50, 10, 10, false}
 		tasks := make([]Task, 0, tc.tasksCount)
 		var runTasksCount int32
