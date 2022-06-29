@@ -56,11 +56,11 @@ func (l *list) Back() *ListItem {
 }
 
 func (l *list) PushFront(v interface{}) *ListItem {
-	newItem := *NewListItem(v, l.front.Next, l.front)
-	l.front.Next.Prev = &newItem
-	l.front.Next = &newItem
+	newItem := NewListItem(v, l.front.Next, l.front)
+	l.front.Next.Prev = newItem
+	l.front.Next = newItem
 	l.length++
-	return &newItem
+	return newItem
 }
 
 func (l *list) PushBack(v interface{}) *ListItem {
