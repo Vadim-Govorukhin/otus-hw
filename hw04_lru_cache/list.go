@@ -64,11 +64,11 @@ func (l *list) PushFront(v interface{}) *ListItem {
 }
 
 func (l *list) PushBack(v interface{}) *ListItem {
-	newItem := *NewListItem(v, l.back, l.back.Prev)
-	l.back.Prev.Next = &newItem
-	l.back.Prev = &newItem
+	newItem := NewListItem(v, l.back, l.back.Prev)
+	l.back.Prev.Next = newItem
+	l.back.Prev = newItem
 	l.length++
-	return &newItem
+	return newItem
 }
 
 func (l *list) Remove(i *ListItem) {
