@@ -56,6 +56,7 @@ func (l *list) Back() *ListItem {
 }
 
 func (l *list) PushFront(v interface{}) *ListItem {
+<<<<<<< HEAD
 	newItem := NewListItem(v, l.front.Next, l.front)
 	l.front.Next.Prev = newItem
 	l.front.Next = newItem
@@ -69,6 +70,21 @@ func (l *list) PushBack(v interface{}) *ListItem {
 	l.back.Prev = newItem
 	l.length++
 	return newItem
+=======
+	newItem := *NewListItem(v, l.front.Next, l.front)
+	l.front.Next.Prev = &newItem
+	l.front.Next = &newItem
+	l.length++
+	return &newItem
+}
+
+func (l *list) PushBack(v interface{}) *ListItem {
+	newItem := *NewListItem(v, l.back, l.back.Prev)
+	l.back.Prev.Next = &newItem
+	l.back.Prev = &newItem
+	l.length++
+	return &newItem
+>>>>>>> hw04_lru_cache
 }
 
 func (l *list) Remove(i *ListItem) {
