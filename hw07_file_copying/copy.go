@@ -25,7 +25,7 @@ var errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 func GetFileSize(fromPath string) (int64, error) {
 	fileInfo, err := os.Stat(fromPath)
 	if err != nil {
-		errorLog.Fatal(err)
+		errorLog.Println(err)
 		return 0, ErrUnsupportedFile
 	}
 	return fileInfo.Size(), nil
@@ -71,11 +71,11 @@ func makeCopy(reader io.Reader, outputFile io.Writer, limit int64, progressBar f
 
 		_, err = reader.Read(data)
 		if err == io.EOF {
-			//outputFile.Write(data)
+			outputFile.Write(data)
 			break
 		}
 		if err != nil {
-			errorLog.Fatal(err)
+			errorLog.Println(err)
 			return err
 		}
 		outputFile.Write(data)
@@ -87,20 +87,20 @@ func makeCopy(reader io.Reader, outputFile io.Writer, limit int64, progressBar f
 func Copy(fromPath, toPath string, offset, limit int64) error {
 	fileSize, err := GetFileSize(fromPath)
 	if err != nil {
-		errorLog.Fatal(err)
+		errorLog.Println(err)
 		return err
 	}
 
 	err = CheckArgs(fileSize, offset, limit)
 	if err != nil {
-		errorLog.Fatal(err)
+		errorLog.Println(err)
 		return err
 	}
 	infoLog.Printf("Input args checked")
 
 	outputFile, err := os.Create(filepath.Join(toPath, "out.txt"))
 	if err != nil {
-		errorLog.Fatal(err)
+		errorLog.Println(err)
 		return err
 	}
 	infoLog.Printf("Output file created")
@@ -108,7 +108,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	inputFile, err := os.Open(fromPath)
 	if err != nil {
-		errorLog.Fatal(err)
+		errorLog.Println(err)
 		return err
 	}
 	defer inputFile.Close()
@@ -116,7 +116,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	reader := bufio.NewReader(inputFile) // creates a new reader
 	_, err = reader.Discard(int(offset)) // discard the following offset bytes
 	if err != nil {
-		errorLog.Fatal(err)
+		errorLog.Println(err)
 		return err
 	}
 
@@ -124,7 +124,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	err = makeCopy(reader, outputFile, limit, progressBar)
 	if err != nil {
-		errorLog.Fatal(err)
+		errorLog.Println(err)
 		return err
 	}
 	infoLog.Printf("Wrote data to new file")

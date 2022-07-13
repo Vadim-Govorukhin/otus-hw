@@ -3,17 +3,30 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestCopy(t *testing.T) {
-	/*
-		t.Run("check filesize", func(t *testing.T) {
+	t.Run("check filesize", func(t *testing.T) {
+		curDir, _ := os.Getwd()
+		fromPath := filepath.Join(curDir, "testdata", "input.txt")
 
-		})
-	*/
+		fileSize, err := GetFileSize(fromPath)
+		require.NoError(t, err, "Failed to check file size")
+		require.Equal(t, int64(6617), fileSize)
+
+		fromPath = ""
+		fileSize, err = GetFileSize(fromPath)
+		require.Equal(t, ErrUnsupportedFile, err)
+		require.Equal(t, int64(0), fileSize)
+
+	})
+
 	t.Run("check agrs", func(t *testing.T) {
 
 		err := CheckArgs(100, 10, 50)
@@ -42,7 +55,7 @@ func TestCopy(t *testing.T) {
 
 	t.Run("check copier lumen", func(t *testing.T) {
 		var limit int64 = 70
-		var fileSize int64 = 288 // 163 // rune
+		var fileSize int64 = 288
 		var offset int64 = 73
 
 		var buffReader bytes.Buffer
@@ -64,25 +77,28 @@ func TestCopy(t *testing.T) {
 		require.Equal(t, "Стоять или бежать, но всё равно гореть.", s)
 
 	})
-	/*
-		fs := fstest.MapFS{
-			"hello.txt": {
-				Data: []byte("hello, world"),
-			},
-		}
-		data, err := fs.ReadFile("hello.txt")
-		if err != nil {
-			panic(err)
-		}
-		println(string(data) == "hello, world")
 
-		//*
-			var buffer bytes.Buffer
-			buffer.WriteString("fake, csv, data")
-			content, err := readFile(&buffer)
-			if err != nil {
-				t.Error("Failed to read csv data")
-			}
-			fmt.Print(content)
-	*/
+	t.Run("check copier test input", func(t *testing.T) {
+		var limit int64 = 1000
+		var offset int64 = 100
+
+		curDir, _ := os.Getwd()
+		fromPath := filepath.Join(curDir, "testdata", "input.txt")
+
+		os.Mkdir("tmp", 0750)
+		defer os.Remove("tmp")
+		toPath := filepath.Join(curDir, "tmp")
+
+		err := Copy(fromPath, toPath, offset, limit)
+		require.NoError(t, err, "Failed to check file size")
+
+		b, _ := ioutil.ReadFile(filepath.Join(toPath, "out.txt"))
+		outputText := string(b)
+
+		b, _ = ioutil.ReadFile(filepath.Join(curDir, "testdata", "out_offset100_limit1000.txt"))
+		goldenText := string(b)
+
+		require.Equal(t, goldenText, outputText)
+	})
+
 }
