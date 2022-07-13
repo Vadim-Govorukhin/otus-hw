@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 )
 
 var (
@@ -18,9 +19,14 @@ func init() {
 
 func main() {
 	flag.Parse()
+	text := `Стоять или бежать, но всё равно гореть.`
 
-	err := Copy(from, to, offset, limit)
-	if err != nil {
-		errorLog.Fatal(err)
-	}
+	fmt.Println(len([]rune(text)))
+	fmt.Println(len(text))
+	/*
+		err := Copy(from, to, offset, limit)
+		if err != nil {
+			errorLog.Fatal(err)
+		}
+	*/
 }

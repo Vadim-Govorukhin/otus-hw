@@ -40,17 +40,17 @@ func CheckArgs(fileSize, offset, limit int64) error {
 }
 
 // ProgressBar - return simple progress bar string
-func ProgressBar(i int, bufLimit, limit, readFileSize int64) string {
+func ProgressBar(i, limit, readFileSize int64) string {
 	minSize := readFileSize
 	if limit < readFileSize {
 		minSize = limit
 	}
-	percent := float64(int64(i)*bufLimit) / float64(minSize)
+	percent := float64(i) / float64(minSize)
 	return fmt.Sprintf("Выполнено %v%%", percent*100)
 }
 
 func PrepareBuffer(limit int64) ([]byte, int64) {
-	bufLimit := limit
+	bufLimit := limit / 2
 	if limit > 512 { /////
 		bufLimit = 64 /////
 	}
@@ -59,13 +59,19 @@ func PrepareBuffer(limit int64) ([]byte, int64) {
 	return data, bufLimit
 }
 
-func makeCopy(reader io.Reader, outputFile io.Writer, data []byte, progressBar func(int) string) error {
+func makeCopy(reader io.Reader, outputFile io.Writer, limit int64, progressBar func(int64) string) error {
+	data, bufLimit := PrepareBuffer(limit)
 	var err error
-	for i := 0; ; i++ {
-		infoLog.Println(progressBar(i))
+	for n := int64(0); n < limit; n += bufLimit {
+		if bufLimit > limit-n {
+			bufLimit = limit - n
+			data = make([]byte, bufLimit)
+		}
+		infoLog.Println(progressBar(n))
 
 		_, err = reader.Read(data)
 		if err == io.EOF {
+			//outputFile.Write(data)
 			break
 		}
 		if err != nil {
@@ -114,10 +120,9 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		return err
 	}
 
-	data, bufLimit := PrepareBuffer(limit)
-	progressBar := func(i int) string { return ProgressBar(i, bufLimit, limit, fileSize-offset) }
+	progressBar := func(i int64) string { return ProgressBar(i, limit, fileSize-offset) }
 
-	err = makeCopy(reader, outputFile, data, progressBar)
+	err = makeCopy(reader, outputFile, limit, progressBar)
 	if err != nil {
 		errorLog.Fatal(err)
 		return err
