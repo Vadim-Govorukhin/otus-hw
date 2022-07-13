@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"path/filepath"
 )
 
 var (
@@ -15,13 +14,13 @@ var (
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 )
 
-// Логгер для записи информационных сообщений
+// Логгер для записи информационных сообщений.
 var infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 
-// Логгер для записи сообщений об ошибках
+// Логгер для записи сообщений об ошибках.
 var errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-// GetFileSize - get size of input file
+// GetFileSize - get size of input file.
 func GetFileSize(fromPath string) (int64, error) {
 	fileInfo, err := os.Stat(fromPath)
 	if err != nil {
@@ -31,22 +30,29 @@ func GetFileSize(fromPath string) (int64, error) {
 	return fileInfo.Size(), nil
 }
 
-// CheckArgs - check given arguments
-func CheckArgs(fileSize, offset, limit int64) error {
+// CheckArgs - check given arguments.
+func CheckArgs(fileSize, offset int64, limit *int64) error {
+	if *limit > fileSize-offset {
+		*limit = fileSize - offset
+	}
+	if *limit == 0 {
+		*limit = fileSize
+	}
+
 	if fileSize < offset {
 		return ErrOffsetExceedsFileSize
 	}
 	return nil
 }
 
-// ProgressBar - return simple progress bar string
+// ProgressBar - return simple progress bar string.
 func ProgressBar(i, limit, readFileSize int64) string {
 	minSize := readFileSize
 	if limit < readFileSize {
 		minSize = limit
 	}
 	percent := float64(i) / float64(minSize)
-	return fmt.Sprintf("Выполнено %v%%", percent*100)
+	return fmt.Sprintf("Completed %.2f%%", percent*100)
 }
 
 func PrepareBuffer(limit int64) ([]byte, int64) {
@@ -83,7 +89,7 @@ func makeCopy(reader io.Reader, outputFile io.Writer, limit int64, progressBar f
 	return nil
 }
 
-// Copy - copy fromPath file to toPath file with given offset and limit
+// Copy - copy fromPath file to toPath file with given offset and limit.
 func Copy(fromPath, toPath string, offset, limit int64) error {
 	fileSize, err := GetFileSize(fromPath)
 	if err != nil {
@@ -91,14 +97,14 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		return err
 	}
 
-	err = CheckArgs(fileSize, offset, limit)
+	err = CheckArgs(fileSize, offset, &limit)
 	if err != nil {
 		errorLog.Println(err)
 		return err
 	}
 	infoLog.Printf("Input args checked")
 
-	outputFile, err := os.Create(filepath.Join(toPath, "out.txt"))
+	outputFile, err := os.Create(toPath)
 	if err != nil {
 		errorLog.Println(err)
 		return err
