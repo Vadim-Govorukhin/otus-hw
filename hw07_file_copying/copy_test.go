@@ -1,9 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -64,88 +67,79 @@ func TestCopy(t *testing.T) {
 
 		limit, _ = CheckArgs(fileSize, offset, limit)
 
-		var buffReader bytes.Buffer
-		buffReader.WriteString(lumenText)
-
-		reader := bufio.NewReader(&buffReader) // creates a new reader
-		reader.Discard(int(offset))            // discard the following offset bytes
+		reader := strings.NewReader(lumenText)
 
 		var buffWriter bytes.Buffer
-
-		err := makeCopy(reader, &buffWriter, limit)
+		err := makeCopy(reader, &buffWriter, limit, offset)
 		require.NoError(t, err, "Failed to read from reader")
+
 		s := buffWriter.String()
 		require.Equal(t, "Стоять или бежать, но всё равно гореть.", s)
 	})
-	/*
-		t.Run("check copier lumen filesize=offset", func(t *testing.T) {
-			infoLog.Printf("====== start test %s =====\n", t.Name())
-			var fileSize int64 = 288
-			var offset int64 = 288
-			var limit int64 = 70
 
-			limit, _ = CheckArgs(fileSize, offset, limit) // limit = 0
+	t.Run("check copier lumen filesize=offset", func(t *testing.T) {
+		infoLog.Printf("====== start test %s =====\n", t.Name())
+		var fileSize int64 = 288
+		var offset int64 = 288
+		var limit int64 = 70
 
-			var buffReader bytes.Buffer
-			buffReader.WriteString(lumenText)
+		limit, _ = CheckArgs(fileSize, offset, limit) // limit = 0
 
-			reader := bufio.NewReader(&buffReader) // creates a new reader
-			reader.Discard(int(offset))            // discard the following offset bytes
+		reader := strings.NewReader(lumenText)
 
-			var buffWriter bytes.Buffer
+		var buffWriter bytes.Buffer
+		err := makeCopy(reader, &buffWriter, limit, offset)
+		require.NoError(t, err, "Failed to read from reader")
+		s := buffWriter.String()
+		require.Equal(t, "", s)
+	})
 
-			err := makeCopy(reader, &buffWriter, limit)
-			require.NoError(t, err, "Failed to read from reader")
-			s := buffWriter.String()
-			require.Equal(t, "", s)
-		})
-		//*
-			t.Run("check copier test input", func(t *testing.T) {
-				infoLog.Printf("====== start test %s =====\n", t.Name())
-				var limit int64 = 1000
-				var offset int64 = 100
+	t.Run("check copier test input", func(t *testing.T) {
+		infoLog.Printf("====== start test %s =====\n", t.Name())
+		var limit int64 = 1000
+		var offset int64 = 100
 
-				curDir, _ := os.Getwd()
-				fromPath := filepath.Join(curDir, "testdata", "input.txt")
+		curDir, _ := os.Getwd()
+		fromPath := filepath.Join(curDir, "testdata", "input.txt")
 
-				os.Mkdir("tmp", 0o750)
-				defer os.RemoveAll("tmp")
-				toPath := filepath.Join(curDir, "tmp", "out.txt")
+		os.Mkdir("tmp", 0o750)
+		defer os.RemoveAll("tmp")
+		toPath := filepath.Join(curDir, "tmp", "out.txt")
 
-				err := Copy(fromPath, toPath, offset, limit)
-				require.NoError(t, err, "Failed to check copy")
+		err := Copy(fromPath, toPath, offset, limit)
+		require.NoError(t, err, "Failed to check copy")
 
-				b, _ := ioutil.ReadFile(toPath)
-				outputText := string(b)
+		b, _ := ioutil.ReadFile(toPath)
+		outputText := string(b)
 
-				b, _ = ioutil.ReadFile(filepath.Join(curDir, "testdata", "out_offset100_limit1000.txt"))
-				goldenText := string(b)
+		b, _ = ioutil.ReadFile(filepath.Join(curDir, "testdata", "out_offset100_limit1000.txt"))
+		goldenText := string(b)
 
-				require.Equal(t, goldenText, outputText)
-			})
+		require.Equal(t, goldenText, outputText)
+	})
 
-			t.Run("check copier test input", func(t *testing.T) {
-				infoLog.Printf("====== start test %s =====\n", t.Name())
-				var limit int64
-				var offset int64
+	t.Run("check copier test input", func(t *testing.T) {
+		infoLog.Printf("====== start test %s =====\n", t.Name())
+		var limit int64
+		var offset int64
 
-				curDir, _ := os.Getwd()
-				fromPath := filepath.Join(curDir, "testdata", "input.txt")
+		curDir, _ := os.Getwd()
+		fromPath := filepath.Join(curDir, "testdata", "input.txt")
 
-				os.Mkdir("tmp", 0o750)
-				defer os.RemoveAll("tmp")
-				toPath := filepath.Join(curDir, "tmp", "out.txt")
+		os.Mkdir("tmp", 0o750)
+		defer os.RemoveAll("tmp")
+		toPath := filepath.Join(curDir, "tmp", "out.txt")
 
-				err := Copy(fromPath, toPath, offset, limit)
-				require.NoError(t, err, "Failed to check copy")
+		err := Copy(fromPath, toPath, offset, limit)
+		require.NoError(t, err, "Failed to check copy")
 
-				b, _ := ioutil.ReadFile(toPath)
-				outputText := string(b)
+		b, _ := ioutil.ReadFile(toPath)
+		outputText := string(b)
 
-				b, _ = ioutil.ReadFile(filepath.Join(curDir, "testdata", "out_offset0_limit0.txt"))
-				goldenText := string(b)
+		b, _ = ioutil.ReadFile(filepath.Join(curDir, "testdata", "out_offset0_limit0.txt"))
+		goldenText := string(b)
 
-				require.Equal(t, goldenText, outputText)
-			})
-	*/
+		require.Equal(t, goldenText, outputText)
+	})
+
 }
