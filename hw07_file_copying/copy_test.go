@@ -77,23 +77,6 @@ func TestCopy(t *testing.T) {
 		require.Equal(t, "Стоять или бежать, но всё равно гореть.", s)
 	})
 
-	t.Run("check copier lumen filesize=offset", func(t *testing.T) {
-		infoLog.Printf("====== start test %s =====\n", t.Name())
-		var fileSize int64 = 288
-		var offset int64 = 288
-		var limit int64 = 70
-
-		limit, _ = CheckArgs(fileSize, offset, limit) // limit = 0
-
-		reader := strings.NewReader(lumenText)
-
-		var buffWriter bytes.Buffer
-		err := makeCopy(reader, &buffWriter, limit, offset)
-		require.NoError(t, err, "Failed to read from reader")
-		s := buffWriter.String()
-		require.Equal(t, "", s)
-	})
-
 	t.Run("check copier test input", func(t *testing.T) {
 		infoLog.Printf("====== start test %s =====\n", t.Name())
 		var limit int64 = 1000
@@ -141,5 +124,4 @@ func TestCopy(t *testing.T) {
 
 		require.Equal(t, goldenText, outputText)
 	})
-
 }
