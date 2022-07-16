@@ -12,52 +12,47 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const lumenText = `Ты можешь помолчать, ты можешь петь,
+\t\tСтоять или бежать, но всё равно гореть.
+Огромный синий кит порвать не может сеть.
+Сдаваться или нет, но всё равно гореть.`
+
 func TestCopy(t *testing.T) {
-	t.Run("check filesize", func(t *testing.T) {
-		curDir, _ := os.Getwd()
-		fromPath := filepath.Join(curDir, "testdata", "input.txt")
-
-		fileSize, err := GetFileSize(fromPath)
-		require.NoError(t, err, "Failed to check file size")
-		require.Equal(t, int64(6617), fileSize)
-
-		fromPath = ""
-		fileSize, err = GetFileSize(fromPath)
-		require.Equal(t, ErrUnsupportedFile, err)
-		require.Equal(t, int64(0), fileSize)
-	})
-
 	t.Run("check agrs", func(t *testing.T) {
 		limit := int64(10)
 
-		err := CheckArgs(100, 10, &limit)
-		require.NoError(t, err, "Failed to check valid args")
+		limit, err := CheckArgs(100, 10, limit)
+		require.NoError(t, err, "Failed valid args")
 
-		err = CheckArgs(10, 100, &limit)
-		require.Equal(t, ErrOffsetExceedsFileSize, err)
+		limit, err = CheckArgs(10, 100, limit)
+		require.Equal(t, ErrOffsetExceedsFileSize, err, "Pass invalid args")
+		require.Equal(t, int64(0), limit)
 
-		limit = 0
-		err = CheckArgs(100, 10, &limit)
-		require.NoError(t, err, "Failed to check valid args")
+		limit, err = CheckArgs(100, 100, limit)
+		require.NoError(t, err, "Failed offset = file size")
+		require.Equal(t, int64(0), limit)
+
+		limit, err = CheckArgs(100, 10, 0)
+		require.NoError(t, err, "Failed zero limit")
 		require.Equal(t, int64(100), limit)
 	})
 
 	t.Run("check progressBar", func(t *testing.T) {
 		progressTemplate := "Completed %.2f%%"
 
-		progressStr := ProgressBar(0, 100, 100)
+		progressStr := ProgressBar(0, 100)
 		expected := fmt.Sprintf(progressTemplate, 0.0)
 		require.Equal(t, expected, progressStr)
 
-		progressStr = ProgressBar(10, 100, 100)
+		progressStr = ProgressBar(10, 100)
 		expected = fmt.Sprintf(progressTemplate, 10.0)
 		require.Equal(t, expected, progressStr)
 
-		progressStr = ProgressBar(100, 100, 100)
+		progressStr = ProgressBar(100, 100)
 		expected = fmt.Sprintf(progressTemplate, 100.0)
 		require.Equal(t, expected, progressStr)
 
-		progressStr = ProgressBar(20, 80, 100)
+		progressStr = ProgressBar(20, 80)
 		expected = fmt.Sprintf(progressTemplate, 25.0)
 		require.Equal(t, expected, progressStr)
 	})
@@ -65,25 +60,43 @@ func TestCopy(t *testing.T) {
 	t.Run("check copier lumen", func(t *testing.T) {
 		var limit int64 = 70
 		var fileSize int64 = 288
-		var offset int64 = 73
+		var offset int64 = 70
+
+		limit, _ = CheckArgs(fileSize, offset, limit)
 
 		var buffReader bytes.Buffer
-		buffReader.WriteString(
-			`Ты можешь помолчать, ты можешь петь,
-			\t\tСтоять или бежать, но всё равно гореть.
-		Огромный синий кит порвать не может сеть.
-		Сдаваться или нет, но всё равно гореть.`)
+		buffReader.WriteString(lumenText)
 
 		reader := bufio.NewReader(&buffReader) // creates a new reader
 		reader.Discard(int(offset))            // discard the following offset bytes
 
 		var buffWriter bytes.Buffer
 
-		progressBar := func(i int64) string { return ProgressBar(i, limit, fileSize-offset) }
-		err := makeCopy(reader, &buffWriter, limit, progressBar)
+		err := makeCopy(reader, &buffWriter, limit)
 		require.NoError(t, err, "Failed to read from reader")
 		s := buffWriter.String()
 		require.Equal(t, "Стоять или бежать, но всё равно гореть.", s)
+	})
+
+	t.Run("check copier lumen filesize=offset", func(t *testing.T) {
+		var fileSize int64 = 288
+		var offset int64 = 288
+		var limit int64 = 70
+
+		limit, _ = CheckArgs(fileSize, offset, limit) // limit = 0
+
+		var buffReader bytes.Buffer
+		buffReader.WriteString(lumenText)
+
+		reader := bufio.NewReader(&buffReader) // creates a new reader
+		reader.Discard(int(offset))            // discard the following offset bytes
+
+		var buffWriter bytes.Buffer
+
+		err := makeCopy(reader, &buffWriter, limit)
+		require.NoError(t, err, "Failed to read from reader")
+		s := buffWriter.String()
+		require.Equal(t, "", s)
 	})
 
 	t.Run("check copier test input", func(t *testing.T) {

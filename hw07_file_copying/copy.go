@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -12,104 +11,101 @@ import (
 var (
 	ErrUnsupportedFile       = errors.New("unsupported file")
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
+
+	infoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info message
+	errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error message
 )
 
-// Логгер для записи информационных сообщений.
-var infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-
-// Логгер для записи сообщений об ошибках.
-var errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-
-// GetFileSize - get size of input file.
-func GetFileSize(fromPath string) (int64, error) {
-	fileInfo, err := os.Stat(fromPath)
-	if err != nil {
-		errorLog.Println(err)
-		return 0, ErrUnsupportedFile
-	}
-	return fileInfo.Size(), nil
-}
-
-// CheckArgs - check given arguments.
-func CheckArgs(fileSize, offset int64, limit *int64) error {
-	if *limit > fileSize-offset {
-		*limit = fileSize - offset
-	}
-	if *limit == 0 {
-		*limit = fileSize
-	}
-
+// CheckArgs - check given arguments and return new limit and error.
+func CheckArgs(fileSize, offset, limit int64) (int64, error) {
 	if fileSize < offset {
-		return ErrOffsetExceedsFileSize
+		return 0, ErrOffsetExceedsFileSize
 	}
-	return nil
+	if fileSize == offset {
+		return 0, nil
+	}
+
+	switch {
+	case limit > fileSize-offset:
+		limit = fileSize - offset
+	case limit == 0:
+		limit = fileSize
+	}
+
+	return limit, nil
 }
 
 // ProgressBar - return simple progress bar string.
-func ProgressBar(i, limit, readFileSize int64) string {
-	minSize := readFileSize
-	if limit < readFileSize {
-		minSize = limit
+func ProgressBar(currRead, limit int64) string {
+	if limit == 0 {
+		return fmt.Sprintf("Completed %.2f%%", 100.)
 	}
-	percent := float64(i) / float64(minSize)
+	percent := float64(currRead) / float64(limit)
 	return fmt.Sprintf("Completed %.2f%%", percent*100)
 }
 
-func PrepareBuffer(limit int64) ([]byte, int64) {
+func PrepareBufferLimit(limit int64) int64 {
 	bufLimit := limit / 2
-	if limit > 512 { /////
-		bufLimit = 64 /////
+	if limit > 1024 { // Need to benchmark
+		bufLimit = 512 // Need to benchmark
 	}
 
-	data := make([]byte, bufLimit)
-	return data, bufLimit
+	return bufLimit
 }
 
-func makeCopy(reader io.Reader, outputFile io.Writer, limit int64, progressBar func(int64) string) error {
-	data, bufLimit := PrepareBuffer(limit)
-	var err error
-	for n := int64(0); n < limit; n += bufLimit {
-		if bufLimit > limit-n {
-			bufLimit = limit - n
-			data = make([]byte, bufLimit)
-		}
-		infoLog.Println(progressBar(n))
+func makeCopy(reader io.Reader, outputFile io.Writer, limit int64) error {
+	bufSize := PrepareBufferLimit(limit)
+	buffer := make([]byte, bufSize)
 
-		_, err = reader.Read(data)
+	var err error
+	var currRead int64
+	defer func() { infoLog.Println(ProgressBar(currRead, limit)) }()
+
+	for ; currRead < limit; currRead += bufSize {
+		if bufSize > limit-currRead {
+			bufSize = limit - currRead
+			buffer = make([]byte, bufSize)
+		}
+		infoLog.Println(ProgressBar(currRead, limit))
+
+		_, err = reader.Read(buffer)
 		if err == io.EOF {
-			outputFile.Write(data)
-			break
+			outputFile.Write(buffer)
+			return nil
 		}
 		if err != nil {
 			errorLog.Println(err)
 			return err
 		}
-		outputFile.Write(data)
+		outputFile.Write(buffer)
 	}
 	return nil
 }
 
 // Copy - copy fromPath file to toPath file with given offset and limit.
 func Copy(fromPath, toPath string, offset, limit int64) error {
-	fileSize, err := GetFileSize(fromPath)
+	// Get file size
+	fileInfo, err := os.Stat(fromPath)
 	if err != nil {
 		errorLog.Println(err)
-		return err
+		return ErrUnsupportedFile
 	}
+	fileSize := fileInfo.Size()
 
-	err = CheckArgs(fileSize, offset, &limit)
+	// Check input arguments and change limit if needed
+	limit, err = CheckArgs(fileSize, offset, limit)
 	if err != nil {
 		errorLog.Println(err)
 		return err
 	}
-	infoLog.Printf("Input args checked")
+	infoLog.Printf("Input args is checked, limit = %v", limit)
 
 	outputFile, err := os.Create(toPath)
 	if err != nil {
 		errorLog.Println(err)
 		return err
 	}
-	infoLog.Printf("Output file created")
+	infoLog.Printf("Output file is created")
 	defer outputFile.Close()
 
 	inputFile, err := os.Open(fromPath)
@@ -119,21 +115,18 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	}
 	defer inputFile.Close()
 
-	reader := bufio.NewReader(inputFile) // creates a new reader
-	_, err = reader.Discard(int(offset)) // discard the following offset bytes
+	_, err = inputFile.Seek(offset, 0) // discard the following offset bytes
 	if err != nil {
 		errorLog.Println(err)
 		return err
 	}
 
-	progressBar := func(i int64) string { return ProgressBar(i, limit, fileSize-offset) }
-
-	err = makeCopy(reader, outputFile, limit, progressBar)
+	err = makeCopy(inputFile, outputFile, limit)
 	if err != nil {
 		errorLog.Println(err)
 		return err
 	}
-	infoLog.Printf("Wrote data to new file")
+	infoLog.Printf("Wrote data to new file %s", outputFile.Name())
 
 	return nil
 }
