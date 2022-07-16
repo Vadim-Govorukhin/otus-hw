@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"sync"
 )
 
 var (
@@ -15,6 +17,16 @@ var (
 	infoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info message
 	errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error message
 )
+
+type Task struct {
+	chunkNum          int
+	currRead, bufSize int64
+}
+
+type copyChunc struct {
+	chunkNum int
+	data     []byte
+}
 
 // CheckArgs - check given arguments and return new limit and error.
 func CheckArgs(fileSize, offset, limit int64) (int64, error) {
@@ -54,32 +66,89 @@ func PrepareBufferLimit(limit int64) int64 {
 }
 
 func makeCopy(reader io.Reader, outputFile io.Writer, limit int64) error {
+	wg := sync.WaitGroup{}
+	chunk := make(chan copyChunc)
+	task := make(chan Task)
+
+	nWorkers := 5
+	go func(nWorkers int) {
+		for n := 0; n < nWorkers; n++ {
+			wg.Add(1)
+			go func(reader io.Reader, task chan Task, n int) {
+				infoLog.Printf("[goroutine %v] start", n)
+				defer wg.Done()
+				defer infoLog.Printf("[goroutine %v] end", n)
+
+				var bufReader *bufio.Reader
+				var buffer []byte
+
+				for t := range task {
+					infoLog.Printf("[goroutine %v] take task %v", n, t.chunkNum)
+					bufReader = bufio.NewReader(reader) // creates a new reader
+					if _, err := bufReader.Discard(int(t.currRead)); err != nil {
+						errorLog.Println(err)
+						return
+					}
+
+					buffer = make([]byte, t.bufSize)
+					_, err := bufReader.Read(buffer)
+					if err == io.EOF {
+						chunk <- copyChunc{t.chunkNum, buffer}
+						return
+					}
+					if err != nil {
+						errorLog.Println(err)
+						return
+					}
+
+					infoLog.Printf("[goroutine %v] sending data from task %v", n, t.chunkNum)
+					chunk <- copyChunc{t.chunkNum, buffer}
+				}
+
+			}(reader, task, n)
+		}
+		wg.Wait()
+		infoLog.Print("[sender tasks] close channel chunk")
+		close(chunk)
+	}(nWorkers)
+
 	bufSize := PrepareBufferLimit(limit)
-	buffer := make([]byte, bufSize)
-
-	var err error
-	var currRead int64
-	defer func() { infoLog.Println(ProgressBar(currRead, limit)) }()
-
-	for ; currRead < limit; currRead += bufSize {
-		if bufSize > limit-currRead {
-			bufSize = limit - currRead
-			buffer = make([]byte, bufSize)
+	var chunkNum int
+	go func() {
+		var currRead int64
+		for ; currRead < limit; currRead += bufSize {
+			infoLog.Printf("[sender tasks] send task %v to chanel", chunkNum)
+			if bufSize > limit-currRead {
+				bufSize = limit - currRead
+			}
+			task <- Task{chunkNum, currRead, bufSize}
+			chunkNum++
 		}
-		infoLog.Println(ProgressBar(currRead, limit))
+		infoLog.Print("[sender tasks] close channel task")
+		close(task)
+	}()
 
-		_, err = reader.Read(buffer)
-		if err == io.EOF {
-			outputFile.Write(buffer)
-			return nil
+	var seekChunk int = 1
+	chunkStore := make(map[int][]byte)
+	go func() {
+		for ch := range chunk {
+			infoLog.Printf("[main] reveive data from task %v", ch.chunkNum)
+			chunkStore[ch.chunkNum] = ch.data
 		}
-		if err != nil {
-			errorLog.Println(err)
-			return err
+	}()
+
+	for {
+		if val, ok := chunkStore[seekChunk]; ok {
+			infoLog.Println(ProgressBar(int64(seekChunk), int64(chunkNum)))
+			infoLog.Printf("[main] write data from chunkNum %v of %v", seekChunk, chunkNum)
+			outputFile.Write(val)
+			if seekChunk == chunkNum {
+				return nil
+			}
+			seekChunk++
 		}
-		outputFile.Write(buffer)
 	}
-	return nil
+
 }
 
 // Copy - copy fromPath file to toPath file with given offset and limit.
