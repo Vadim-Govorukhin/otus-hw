@@ -61,7 +61,7 @@ func TestSuppFunc(t *testing.T) {
 }
 
 func TestCopyAsync(t *testing.T) {
-	t.Run("check copier lumen", func(t *testing.T) {
+	t.Run("check async copier lumen", func(t *testing.T) {
 		infoLog.Printf("====== start test %s =====\n", t.Name())
 		var limit int64 = 70
 		var fileSize int64 = 288
@@ -79,7 +79,7 @@ func TestCopyAsync(t *testing.T) {
 		require.Equal(t, "Стоять или бежать, но всё равно гореть.", s)
 	})
 
-	t.Run("check copier test input", func(t *testing.T) {
+	t.Run("check async copier test input", func(t *testing.T) {
 		infoLog.Printf("====== start test %s =====\n", t.Name())
 		var limit int64 = 1000
 		var offset int64 = 100
@@ -104,11 +104,82 @@ func TestCopyAsync(t *testing.T) {
 		require.Equal(t, goldenText, outputText)
 	})
 
-	t.Run("check copier test input", func(t *testing.T) {
+	t.Run("check async copier test input", func(t *testing.T) {
 		infoLog.Printf("====== start test %s =====\n", t.Name())
 		var limit int64
 		var offset int64
 		isAsync := true
+
+		curDir, _ := os.Getwd()
+		fromPath := filepath.Join(curDir, "testdata", "input.txt")
+
+		os.Mkdir("tmp", 0o750)
+		defer os.RemoveAll("tmp")
+		toPath := filepath.Join(curDir, "tmp", "out.txt")
+
+		err := Copy(fromPath, toPath, offset, limit, isAsync)
+		require.NoError(t, err, "Failed to check copy")
+
+		b, _ := ioutil.ReadFile(toPath)
+		outputText := string(b)
+
+		b, _ = ioutil.ReadFile(filepath.Join(curDir, "testdata", "out_offset0_limit0.txt"))
+		goldenText := string(b)
+
+		require.Equal(t, goldenText, outputText)
+	})
+}
+
+func TestCopySync(t *testing.T) {
+	t.Run("check copier lumen", func(t *testing.T) {
+		infoLog.Printf("====== start test %s =====\n", t.Name())
+		var limit int64 = 70
+		var fileSize int64 = 288
+		var offset int64 = 70
+
+		limit, _ = CheckArgs(fileSize, offset, limit)
+
+		reader := strings.NewReader(lumenText)
+		reader.Seek(offset, 0)
+
+		var buffWriter bytes.Buffer
+		err := makeCopySync(reader, &buffWriter, limit)
+		require.NoError(t, err, "Failed to read from reader")
+
+		s := buffWriter.String()
+		require.Equal(t, "Стоять или бежать, но всё равно гореть.", s)
+	})
+
+	t.Run("check copier test input", func(t *testing.T) {
+		infoLog.Printf("====== start test %s =====\n", t.Name())
+		var limit int64 = 1000
+		var offset int64 = 100
+		isAsync := false
+
+		curDir, _ := os.Getwd()
+		fromPath := filepath.Join(curDir, "testdata", "input.txt")
+
+		os.Mkdir("tmp", 0o750)
+		defer os.RemoveAll("tmp")
+		toPath := filepath.Join(curDir, "tmp", "out.txt")
+
+		err := Copy(fromPath, toPath, offset, limit, isAsync)
+		require.NoError(t, err, "Failed to check copy")
+
+		b, _ := ioutil.ReadFile(toPath)
+		outputText := string(b)
+
+		b, _ = ioutil.ReadFile(filepath.Join(curDir, "testdata", "out_offset100_limit1000.txt"))
+		goldenText := string(b)
+
+		require.Equal(t, goldenText, outputText)
+	})
+
+	t.Run("check async copier test input", func(t *testing.T) {
+		infoLog.Printf("====== start test %s =====\n", t.Name())
+		var limit int64
+		var offset int64
+		isAsync := false
 
 		curDir, _ := os.Getwd()
 		fromPath := filepath.Join(curDir, "testdata", "input.txt")

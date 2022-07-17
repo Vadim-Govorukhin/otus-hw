@@ -59,7 +59,7 @@ func PrepareBufferLimit(limit int64) (int64, int) {
 	return bufSize, iterNum
 }
 
-func makeCopy(reader io.ReadSeeker, outputFile io.Writer, limit, offset int64) error {
+func makeCopyAsync(reader io.ReadSeeker, outputFile io.Writer, limit, offset int64) error {
 	var mu sync.Mutex
 	task := make(chan Task)
 
@@ -120,6 +120,35 @@ func makeCopy(reader io.ReadSeeker, outputFile io.Writer, limit, offset int64) e
 	return nil
 }
 
+func makeCopySync(reader io.Reader, outputFile io.Writer, limit int64) error {
+	bufSize, _ := PrepareBufferLimit(limit)
+	buffer := make([]byte, bufSize)
+
+	var err error
+	var currRead int64
+	defer func() { infoLog.Println(ProgressBar(currRead, limit)) }()
+
+	for ; currRead < limit; currRead += bufSize {
+		if bufSize > limit-currRead {
+			bufSize = limit - currRead
+			buffer = make([]byte, bufSize)
+		}
+		infoLog.Println(ProgressBar(currRead, limit))
+
+		_, err = reader.Read(buffer)
+		if err == io.EOF {
+			outputFile.Write(buffer)
+			return nil
+		}
+		if err != nil {
+			errorLog.Println(err)
+			return err
+		}
+		outputFile.Write(buffer)
+	}
+	return nil
+}
+
 // Copy - copy fromPath file to toPath file with given offset and limit.
 func Copy(fromPath, toPath string, offset, limit int64, isAsync bool) error {
 	// Get file size
@@ -164,7 +193,7 @@ func Copy(fromPath, toPath string, offset, limit int64, isAsync bool) error {
 	if isAsync {
 		err = makeCopyAsync(inputFile, outputFile, limit, offset)
 	} else {
-		err = makeCopySync(inputFile, outputFile, limit, offset)
+		err = makeCopySync(inputFile, outputFile, limit)
 	}
 	if err != nil {
 		errorLog.Println(err)
