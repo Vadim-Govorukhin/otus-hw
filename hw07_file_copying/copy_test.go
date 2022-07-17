@@ -201,10 +201,36 @@ func TestCopySync(t *testing.T) {
 	})
 }
 
-/*
-func BenchmarkPrimeNumbers(b *testing.B) {
-    for i := 0; i < b.N; i++ {
-        primeNumbers(num)
-    }
+// 333	   3870650 ns/op	    4294 B/op	      31 allocs/op.
+func BenchmarkCopySync(b *testing.B) {
+	var limit int64 = 1000
+	var offset int64 = 100
+	isAsync := false
+
+	curDir, _ := os.Getwd()
+	fromPath := filepath.Join(curDir, "testdata", "input.txt")
+
+	os.Mkdir("tmp", 0o750)
+	defer os.RemoveAll("tmp")
+	toPath := filepath.Join(curDir, "tmp", "out.txt")
+	for i := 0; i < b.N; i++ {
+		Copy(fromPath, toPath, offset, limit, isAsync)
+	}
 }
-*/
+
+// 472	   3336423 ns/op	    6866 B/op	      83 allocs/op.
+func BenchmarkCopyAsync(b *testing.B) {
+	var limit int64 = 1000
+	var offset int64 = 100
+	isAsync := true
+
+	curDir, _ := os.Getwd()
+	fromPath := filepath.Join(curDir, "testdata", "input.txt")
+
+	os.Mkdir("tmp", 0o750)
+	defer os.RemoveAll("tmp")
+	toPath := filepath.Join(curDir, "tmp", "out.txt")
+	for i := 0; i < b.N; i++ {
+		Copy(fromPath, toPath, offset, limit, isAsync)
+	}
+}

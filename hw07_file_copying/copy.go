@@ -95,7 +95,7 @@ func makeCopyAsync(reader io.ReadSeeker, outputFile io.Writer, limit, offset int
 
 			var buffer []byte
 			for t := range task {
-				infoLog.Printf("[goroutine %v] %s", n, t)
+				infoLog.Printf("[goroutine %v] run %s", n, t)
 				buffer = make([]byte, t.bufSize)
 
 				mu.Lock()
