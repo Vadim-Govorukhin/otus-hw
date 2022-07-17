@@ -21,7 +21,7 @@ func init() {
 func main() {
 	flag.Parse()
 
-	err := Copy(from, to, offset, limit)
+	err := Copy(from, to, offset, limit, isAsync)
 	if err != nil {
 		errorLog.Fatal(err)
 	}

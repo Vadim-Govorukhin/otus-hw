@@ -70,17 +70,6 @@ func makeCopy(reader io.ReadSeeker, outputFile io.Writer, limit, offset int64) e
 	}
 
 	go func() {
-		//var currRead, chunkNum int64
-		/*
-			for ; currRead < limit; currRead += bufSize {
-				if bufSize > limit-currRead {
-					bufSize = limit - currRead
-				}
-				infoLog.Printf("[sender] send task %v to read %v bytes with offset %v", chunkNum, bufSize, currRead)
-				task <- Task{chunkNum, currRead, bufSize}
-				chunkNum++
-			}
-		*/
 		for i := 0; i < iterNum; i++ {
 			infoLog.Printf("[sender] send task %v to read %v bytes with offset %v", i, bufSize, bufSize*int64(i))
 			task <- Task{int64(i), bufSize}
@@ -132,7 +121,7 @@ func makeCopy(reader io.ReadSeeker, outputFile io.Writer, limit, offset int64) e
 }
 
 // Copy - copy fromPath file to toPath file with given offset and limit.
-func Copy(fromPath, toPath string, offset, limit int64) error {
+func Copy(fromPath, toPath string, offset, limit int64, isAsync bool) error {
 	// Get file size
 	fileInfo, err := os.Stat(fromPath)
 	if err != nil {
@@ -172,7 +161,11 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		return err
 	}
 
-	err = makeCopy(inputFile, outputFile, limit, offset)
+	if isAsync {
+		err = makeCopyAsync(inputFile, outputFile, limit, offset)
+	} else {
+		err = makeCopySync(inputFile, outputFile, limit, offset)
+	}
 	if err != nil {
 		errorLog.Println(err)
 		return err

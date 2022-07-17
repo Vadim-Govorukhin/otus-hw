@@ -17,7 +17,7 @@ const lumenText = `Ты можешь помолчать, ты можешь пе�
 Огромный синий кит порвать не может сеть.
 Сдаваться или нет, но всё равно гореть.`
 
-func TestCopy(t *testing.T) {
+func TestSuppFunc(t *testing.T) {
 	t.Run("check agrs", func(t *testing.T) {
 		infoLog.Printf("====== start test %s =====\n", t.Name())
 		limit := int64(10)
@@ -58,7 +58,9 @@ func TestCopy(t *testing.T) {
 		expected = fmt.Sprintf(progressTemplate, 25.0)
 		require.Equal(t, expected, progressStr)
 	})
+}
 
+func TestCopyAsync(t *testing.T) {
 	t.Run("check copier lumen", func(t *testing.T) {
 		infoLog.Printf("====== start test %s =====\n", t.Name())
 		var limit int64 = 70
@@ -70,7 +72,7 @@ func TestCopy(t *testing.T) {
 		reader := strings.NewReader(lumenText)
 
 		var buffWriter bytes.Buffer
-		err := makeCopy(reader, &buffWriter, limit, offset)
+		err := makeCopyAsync(reader, &buffWriter, limit, offset)
 		require.NoError(t, err, "Failed to read from reader")
 
 		s := buffWriter.String()
@@ -81,6 +83,7 @@ func TestCopy(t *testing.T) {
 		infoLog.Printf("====== start test %s =====\n", t.Name())
 		var limit int64 = 1000
 		var offset int64 = 100
+		isAsync := true
 
 		curDir, _ := os.Getwd()
 		fromPath := filepath.Join(curDir, "testdata", "input.txt")
@@ -89,7 +92,7 @@ func TestCopy(t *testing.T) {
 		defer os.RemoveAll("tmp")
 		toPath := filepath.Join(curDir, "tmp", "out.txt")
 
-		err := Copy(fromPath, toPath, offset, limit)
+		err := Copy(fromPath, toPath, offset, limit, isAsync)
 		require.NoError(t, err, "Failed to check copy")
 
 		b, _ := ioutil.ReadFile(toPath)
@@ -105,6 +108,7 @@ func TestCopy(t *testing.T) {
 		infoLog.Printf("====== start test %s =====\n", t.Name())
 		var limit int64
 		var offset int64
+		isAsync := true
 
 		curDir, _ := os.Getwd()
 		fromPath := filepath.Join(curDir, "testdata", "input.txt")
@@ -113,7 +117,7 @@ func TestCopy(t *testing.T) {
 		defer os.RemoveAll("tmp")
 		toPath := filepath.Join(curDir, "tmp", "out.txt")
 
-		err := Copy(fromPath, toPath, offset, limit)
+		err := Copy(fromPath, toPath, offset, limit, isAsync)
 		require.NoError(t, err, "Failed to check copy")
 
 		b, _ := ioutil.ReadFile(toPath)
