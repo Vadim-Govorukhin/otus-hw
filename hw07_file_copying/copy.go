@@ -40,7 +40,7 @@ func CheckArgs(fileSize, offset, limit int64) (int64, error) {
 	case limit > fileSize-offset:
 		limit = fileSize - offset
 	case limit == 0:
-		limit = fileSize
+		limit = fileSize - offset
 	}
 
 	return limit, nil
@@ -89,7 +89,7 @@ func makeCopyAsync(reader io.ReadSeeker, outputFile io.Writer, limit, offset int
 
 	nWorkers := 5
 	for n := 0; n < nWorkers; n++ {
-		go func(reader io.ReadSeeker, task chan Task, chunk []chan []byte, n int) {
+		go func(n int, reader io.ReadSeeker, task chan Task, chunk []chan []byte) {
 			infoLog.Printf("[goroutine %v] start", n)
 			defer infoLog.Printf("[goroutine %v] end", n)
 
@@ -120,7 +120,7 @@ func makeCopyAsync(reader io.ReadSeeker, outputFile io.Writer, limit, offset int
 				chunk[t.chunkNum] <- buffer[:n]
 				close(chunk[t.chunkNum])
 			}
-		}(reader, task, chunks, n)
+		}(n, reader, task, chunks)
 	}
 
 	var err error
@@ -154,7 +154,7 @@ func makeCopySync(reader io.Reader, outputFile io.Writer, limit int64) error {
 		infoLog.Println(ProgressBar(currRead, limit))
 
 		_, err = reader.Read(buffer)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			outputFile.Write(buffer)
 			return nil
 		}

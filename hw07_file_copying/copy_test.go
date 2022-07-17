@@ -35,7 +35,7 @@ func TestSuppFunc(t *testing.T) {
 
 		limit, err = CheckArgs(100, 10, 0)
 		require.NoError(t, err, "Failed zero limit")
-		require.Equal(t, int64(100), limit)
+		require.Equal(t, int64(90), limit)
 	})
 
 	t.Run("check progressBar", func(t *testing.T) {
