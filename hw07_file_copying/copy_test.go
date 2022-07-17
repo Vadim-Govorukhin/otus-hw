@@ -200,3 +200,11 @@ func TestCopySync(t *testing.T) {
 		require.Equal(t, goldenText, outputText)
 	})
 }
+
+/*
+func BenchmarkPrimeNumbers(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        primeNumbers(num)
+    }
+}
+*/

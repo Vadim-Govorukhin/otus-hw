@@ -22,6 +22,11 @@ type Task struct {
 	chunkNum, bufSize int64
 }
 
+func (t Task) String() string {
+	return fmt.Sprintf("task %v to read %v bytes with offset %v",
+		t.chunkNum, t.bufSize, t.chunkNum*t.bufSize)
+}
+
 // CheckArgs - check given arguments and return new limit and error.
 func CheckArgs(fileSize, offset, limit int64) (int64, error) {
 	if fileSize < offset {
@@ -62,6 +67,8 @@ func PrepareBufferLimit(limit int64) (int64, int) {
 func makeCopyAsync(reader io.ReadSeeker, outputFile io.Writer, limit, offset int64) error {
 	var mu sync.Mutex
 	task := make(chan Task)
+	errorsChan := make(chan error)
+	defer close(errorsChan)
 
 	bufSize, iterNum := PrepareBufferLimit(limit)
 	chunks := make([]chan []byte, iterNum) // create a slice of channels for each reading iteration
@@ -70,9 +77,11 @@ func makeCopyAsync(reader io.ReadSeeker, outputFile io.Writer, limit, offset int
 	}
 
 	go func() {
+		var t Task
 		for i := 0; i < iterNum; i++ {
-			infoLog.Printf("[sender] send task %v to read %v bytes with offset %v", i, bufSize, bufSize*int64(i))
-			task <- Task{int64(i), bufSize}
+			t = Task{int64(i), bufSize}
+			infoLog.Printf("[sender] send %s", t)
+			task <- t
 		}
 		infoLog.Print("[sender] close channel task")
 		close(task)
@@ -86,21 +95,25 @@ func makeCopyAsync(reader io.ReadSeeker, outputFile io.Writer, limit, offset int
 
 			var buffer []byte
 			for t := range task {
-				infoLog.Printf("[goroutine %v] task %v to read %v bytes with offset %v", n, t.chunkNum, t.bufSize, t.chunkNum*t.bufSize)
+				infoLog.Printf("[goroutine %v] %s", n, t)
 				buffer = make([]byte, t.bufSize)
 
 				mu.Lock()
 				if _, err := reader.Seek(t.chunkNum*t.bufSize+offset, io.SeekStart); err != nil {
-					errorLog.Println(err)
 					mu.Unlock()
-					return
+					errorLog.Printf("[goroutine %v] task %v stopped with error %e ",
+						n, t.chunkNum, err)
+					errorsChan <- err
+					continue
 				}
 
 				n, err := reader.Read(buffer)
 				mu.Unlock()
-				if (err != nil) && (err != io.EOF) {
-					errorLog.Println(err)
-					return
+				if (err != nil) && !errors.Is(err, io.EOF) {
+					errorLog.Printf("[goroutine %v] task %v stopped with error %e ",
+						n, t.chunkNum, err)
+					errorsChan <- err
+					continue
 				}
 
 				infoLog.Printf("[goroutine %v] sending data from task %v", n, t.chunkNum)
@@ -110,14 +123,19 @@ func makeCopyAsync(reader io.ReadSeeker, outputFile io.Writer, limit, offset int
 		}(reader, task, chunks, n)
 	}
 
+	var err error
 	for i := 0; i < iterNum; {
-		data := <-chunks[i]
-		i++
-		infoLog.Println(ProgressBar(int64(i), int64(iterNum)))
-		infoLog.Printf("[main] write data from chunkNum %v of %v", i, iterNum)
-		outputFile.Write(data)
+		select {
+		case data := <-chunks[i]:
+			i++
+			infoLog.Println(ProgressBar(int64(i), int64(iterNum)))
+			infoLog.Printf("[main] write data from chunkNum %v of %v", i, iterNum)
+			outputFile.Write(data)
+		case e := <-errorsChan:
+			err = e
+		}
 	}
-	return nil
+	return err
 }
 
 func makeCopySync(reader io.Reader, outputFile io.Writer, limit int64) error {
