@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -19,6 +20,7 @@ var testFiles = []struct {
 	{fileName: "NIL", body: nil},
 	{fileName: "STR2", body: "string\nSECON STRING"},
 	{fileName: "HELLO", body: "\"hello\""},
+	{fileName: "F.TXT", body: "i am txt"},
 }
 
 func shouldGetwd(t *testing.T) string {
@@ -58,7 +60,7 @@ func setupTest(t *testing.T) {
 	infoLog.Printf("====== start test %s =====\n", t.Name())
 }
 func TestReadDir(t *testing.T) {
-	resultTestFiles := make(map[string]EnvValue)
+	resultTestFiles := make(Environment)
 	for _, t := range testFiles {
 		var NeedRemove bool
 		if (t.body == "to delete") || (t.body == nil) { // TODO
@@ -70,7 +72,7 @@ func TestReadDir(t *testing.T) {
 		case int:
 			Value = fmt.Sprintf("%d", v)
 		case string:
-			Value = v
+			Value = strings.Split(v, "\n")[0]
 		}
 
 		resultTestFiles[t.fileName] = EnvValue{Value: Value, NeedRemove: NeedRemove}

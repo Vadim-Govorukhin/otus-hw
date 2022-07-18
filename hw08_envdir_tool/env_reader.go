@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -33,7 +34,7 @@ func (env EnvValue) String() string {
 // ReadDir reads a specified directory and returns map of env variables.
 // Variables represented as files where filename is name of variable, file first line is a value.
 func ReadDir(dir string) (Environment, error) {
-	//Environment := make(map[string]EnvValue)
+	Environment := make(map[string]EnvValue)
 
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -50,8 +51,20 @@ func ReadDir(dir string) (Environment, error) {
 			return nil, ErrUnsupportedFileName
 		}
 
+		var NeedRemove bool
+		if f.Size() == 0 {
+			NeedRemove = true
+		}
+
+		buf, err := ioutil.ReadFile(filepath.Join(dir, fileName))
+		if err != nil {
+			errorLog.Println(err)
+			return nil, err
+		}
+
+		Environment[fileName] = EnvValue{Value: string(buf), NeedRemove: NeedRemove}
+
 	}
 
-	//return Environment, nil
-	return nil, nil
+	return Environment, nil
 }
