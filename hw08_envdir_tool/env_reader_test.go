@@ -19,6 +19,7 @@ var testFiles = []struct {
 	{fileName: "NIL", body: "to delete"},
 	{fileName: "NIL", body: nil},
 	{fileName: "STR2", body: "string\nSECON STRING"},
+	{fileName: "STR3", body: "\nSECON STRING"},
 	{fileName: "HELLO", body: "\"hello\""},
 	{fileName: "F.TXT", body: "i am txt"},
 }
@@ -61,26 +62,29 @@ func setupTest(t *testing.T) {
 }
 func TestReadDir(t *testing.T) {
 	resultTestFiles := make(Environment)
-	for _, t := range testFiles {
+	for _, testCase := range testFiles {
 		var NeedRemove bool
-		if (t.body == "to delete") || (t.body == nil) { // TODO
+		if testCase.body == nil {
 			NeedRemove = true
 		}
 
 		var Value string
-		switch v := t.body.(type) { // TODO
+		switch v := testCase.body.(type) {
 		case int:
 			Value = fmt.Sprintf("%d", v)
 		case string:
 			Value = strings.Split(v, "\n")[0]
 		}
 
-		resultTestFiles[t.fileName] = EnvValue{Value: Value, NeedRemove: NeedRemove}
+		resultTestFiles[testCase.fileName] = EnvValue{Value: Value, NeedRemove: NeedRemove}
 	}
 
 	t.Run("preparing test dir", func(t *testing.T) {
+		setupTest(t)
+
 		testDirName := "testDir"
 		defer os.RemoveAll(testDirName)
+
 		_, err := prepareTestDir(t, testDirName)
 		require.NoError(t, err)
 	})
@@ -89,8 +93,9 @@ func TestReadDir(t *testing.T) {
 		setupTest(t)
 
 		testDirName := "testDir"
-		defer os.RemoveAll(testDirName)
 		os.Mkdir(testDirName, 0o750)
+		defer os.RemoveAll(testDirName)
+
 		testDirPath := filepath.Join(shouldGetwd(t), testDirName)
 		newFile, _ := os.Create(filepath.Join(testDirPath, "VAR="))
 		newFile.Close()
@@ -99,16 +104,15 @@ func TestReadDir(t *testing.T) {
 		require.ErrorIs(t, err, ErrUnsupportedFileName)
 	})
 
-	t.Run("test case", func(t *testing.T) {
+	t.Run("test cases", func(t *testing.T) {
 		setupTest(t)
 
 		testDirName := "testDir"
-		defer os.RemoveAll(testDirName)
 		testDirPath, _ := prepareTestDir(t, testDirName)
+		defer os.RemoveAll(testDirName)
 
 		Environment, err := ReadDir(testDirPath)
 		require.NoError(t, err)
 		require.Equal(t, resultTestFiles, Environment)
-
 	})
 }

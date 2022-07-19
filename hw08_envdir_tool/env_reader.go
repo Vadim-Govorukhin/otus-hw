@@ -1,8 +1,8 @@
 package main
 
 import (
+	"bytes"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,13 +10,11 @@ import (
 	"strings"
 )
 
-var (
-	ErrUnsupportedFileName = errors.New("unsupported file name")
-)
+var ErrUnsupportedFileName = errors.New("unsupported file name")
 
 var (
-	infoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info message
-	errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error message
+	infoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info messages
+	errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error messages
 )
 
 type Environment map[string]EnvValue
@@ -25,10 +23,6 @@ type Environment map[string]EnvValue
 type EnvValue struct {
 	Value      string
 	NeedRemove bool
-}
-
-func (env EnvValue) String() string {
-	return fmt.Sprintf("\tValue: %s,\n\t NeedRemove: %t", env.Value, env.NeedRemove)
 }
 
 // ReadDir reads a specified directory and returns map of env variables.
@@ -42,7 +36,7 @@ func ReadDir(dir string) (Environment, error) {
 		return nil, err
 	}
 
-	var invalidFileNames = "="
+	invalidFileNames := "="
 	for _, f := range files {
 		fileName := f.Name()
 		infoLog.Println("Handling file", fileName)
@@ -61,10 +55,10 @@ func ReadDir(dir string) (Environment, error) {
 			errorLog.Println(err)
 			return nil, err
 		}
+		buf = bytes.Replace(buf, []byte(`0x00`), []byte("\n"), 1) // replace terminal nulls
+		buf = bytes.Split(buf, []byte("\n"))[0]                   // Keep the first line
 
 		Environment[fileName] = EnvValue{Value: string(buf), NeedRemove: NeedRemove}
-
 	}
-
 	return Environment, nil
 }
