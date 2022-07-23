@@ -162,7 +162,11 @@ func makeCopySync(reader io.Reader, outputFile io.Writer, limit int64) error {
 			errorLog.Println(err)
 			return err
 		}
-		outputFile.Write(buffer)
+		_, err = outputFile.Write(buffer)
+		if err != nil {
+			errorLog.Println(err)
+			return err
+		}
 	}
 	return nil
 }
