@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type UserRole string
@@ -36,25 +38,30 @@ type (
 	}
 )
 
+type App2 struct {
+	Version string `validate:"len:5|in:foo,bar"`
+	Age     int    `validate:"min:18|max:50"`
+	I       float64
+}
+
 func TestValidate(t *testing.T) {
-	tests := []struct {
+	testCases := []struct {
 		in          interface{}
 		expectedErr error
 	}{
 		{
-			// Place your code here.
+			in:          App2{"Hello", 0, 0.0},
+			expectedErr: ValidationErrors{{"Age", ErrUnsupportedTag}},
 		},
-		// ...
-		// Place your code here.
 	}
 
-	for i, tt := range tests {
+	for i, tt := range testCases {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			tt := tt
 			t.Parallel()
 
-			// Place your code here.
-			_ = tt
+			err := Validate(tt.in)
+			require.ErrorIs(t, err, tt.expectedErr)
 		})
 	}
 }
