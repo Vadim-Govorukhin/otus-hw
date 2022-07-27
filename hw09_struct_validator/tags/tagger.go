@@ -32,6 +32,8 @@ func ParseTags(tag string, typeField string) (Tagger, error) {
 	case "int", "[]int":
 		tagStruct = &IntTags{}
 	default:
+		ErrorLog.Printf("Unsupported type of Field: %s\n", reflect.TypeOf(typeField))
+		ErrorLog.Printf("Unsupported type of Field: %s\n", typeField)
 		return nil, ErrUnsupportedTypeField
 	}
 

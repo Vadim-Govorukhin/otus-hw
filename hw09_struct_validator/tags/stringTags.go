@@ -2,14 +2,15 @@ package tags
 
 import (
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
 type StringTags struct {
-	len   int
-	regex string
-	in    []string
+	len    int
+	regexp string
+	in     []string
 }
 
 func (T *StringTags) FillField(tag string) error {
@@ -26,11 +27,12 @@ func (T *StringTags) FillField(tag string) error {
 			return err
 		}
 		T.len = i
-	case "regex":
-		T.regex = m[1]
+	case "regexp":
+		T.regexp = m[1]
 	case "in":
 		T.in = strings.Split(m[1], ",")
 	default:
+		ErrorLog.Printf("Unsupported tag name: %s\n", m[0])
 		return ErrUnsupportedTag
 	}
 	return nil
@@ -45,9 +47,18 @@ func (T *StringTags) IsValid(i reflect.Value) error {
 	}
 
 	// regex
-	if T.regex != "" {
-		//
-		//return false, ErrInvaildByTag
+	InfoLog.Println("Start check regex")
+	if T.regexp != "" {
+		re, err := regexp.Compile(T.regexp)
+		if err != nil {
+			ErrorLog.Printf("regex error %e", err)
+			return err
+		}
+		InfoLog.Println("Here 1")
+		if ok := re.MatchString(T.regexp); !ok {
+			return ErrInvaildByTag
+		}
+		InfoLog.Println("Here 2")
 	}
 
 	// in

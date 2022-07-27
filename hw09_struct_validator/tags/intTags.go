@@ -41,13 +41,13 @@ func (T *IntTags) FillField(tag string) error {
 		T.max = &i
 	case "in":
 		var arr []int
-		var err error
-		for i, s := range strings.Split(m[1], ",") {
-			arr[i], err = strconv.Atoi(s)
+		for _, s := range strings.Split(m[1], ",") {
+			num, err := strconv.Atoi(s)
 			if err != nil {
 				ErrorLog.Printf("parsing error %e", err)
 				return err
 			}
+			arr = append(arr, num)
 		}
 		T.in = arr
 	default:

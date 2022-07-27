@@ -51,7 +51,6 @@ func Validate(v interface{}) error {
 				return err
 			}
 
-			infoLog.Println(fv.Kind() == reflect.Slice)
 			if fv.Kind() == reflect.Slice {
 				for i := 0; i < fv.Len(); i++ {
 					err = validateField(tagStruct, fv.Index(i))
