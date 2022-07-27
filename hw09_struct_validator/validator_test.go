@@ -39,8 +39,9 @@ type (
 )
 
 type App2 struct {
-	Version string `validate:"len:5|in:foo,bar"`
+	Version string `validate:"len:5"`
 	Age     int    `validate:"min:18|max:50"`
+	Ages    []int  `validate:"min:18|max:50"`
 	I       float64
 }
 
@@ -50,7 +51,7 @@ func TestValidate(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			in:          App2{"Hello", 0, 0.0},
+			in:          App2{"Hello", 20, []int{18, 29}, 0.0},
 			expectedErr: ValidationErrors{{"Age", ErrUnsupportedTag}},
 		},
 	}

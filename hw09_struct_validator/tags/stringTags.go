@@ -1,6 +1,7 @@
 package tags
 
 import (
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -35,15 +36,12 @@ func (T *StringTags) FillField(tag string) error {
 	return nil
 }
 
-func (T *StringTags) IsValid(i interface{}) (bool, error) {
-	s, ok := i.(string)
-	if !ok {
-		return false, ErrUnsupportedTypeField
-	}
+func (T *StringTags) IsValid(i reflect.Value) error {
+	s := i.String()
 
 	// len
-	if (T.len != 0) || (len(s) != T.len) {
-		return false, ErrInvaildByTag
+	if (T.len != 0) && (len(s) != T.len) {
+		return ErrInvaildByTag
 	}
 
 	// regex
@@ -62,9 +60,9 @@ func (T *StringTags) IsValid(i interface{}) (bool, error) {
 			}
 		}
 		if !flag {
-			return false, ErrInvaildByTag
+			return ErrInvaildByTag
 		}
 	}
 
-	return true, nil
+	return nil
 }

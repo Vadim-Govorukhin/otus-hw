@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	InfoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info message
-	ErrorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error message
+	infoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info message
+	errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error message
 )
 
 var (
@@ -37,7 +37,7 @@ func (v ValidationErrors) Error() string {
 }
 
 func Validate(v interface{}) error {
-	InfoLog.Printf("start validate type %[1]T with val %[1]v\n", v)
+	infoLog.Printf("start validate struct %+v\n", v)
 	t := reflect.TypeOf(v)
 	val := reflect.ValueOf(v)
 
@@ -46,41 +46,22 @@ func Validate(v interface{}) error {
 		f := t.Field(i)
 		fv := val.Field(i)
 
-		tag := f.Tag.Get("validate")
-		if tag != "" {
+		if tag, ok := f.Tag.Lookup("validate"); ok {
+			infoLog.Printf("check field '%v': value '%v' and tags '%s'", f.Name, fv, tag)
 			tagStruct, err := tags.ParseTags(tag, fv.Type().String())
 			if err != nil {
-				ErrorLog.Printf("parsing error %e", err)
+				errorLog.Printf("parsing error %e", err)
 				return err
 			}
-			validationErr := validateField(f.Name, fv, tagStruct)
-			validationErrors = append(validationErrors, validationErr)
+
+			infoLog.Printf("\tvalidate value '%v' with tags %+v\n", fv, tagStruct)
+			err = tagStruct.IsValid(fv)
+			infoLog.Printf("\tend check with error %v\n", err)
+
+			validationErrors = append(validationErrors, ValidationError{f.Name, err})
 		}
 
 	}
-	InfoLog.Println("List of errors", validationErrors)
-	return nil
-}
-
-func validateField(name string, v reflect.Value, tagStruct tags.Tagger) ValidationError {
-	InfoLog.Printf("validate value %v with tags %+v\n", v, tagStruct)
-	isValid, err := tagStruct.IsValid(v)
-	InfoLog.Printf("value is %v with errors %+e\n", isValid, err)
-	return ValidationError{name, err}
-
-	/*
-		switch v.Kind() {
-		case reflect.Invalid:
-			ErrorLog.Printf("%s is invalid\n", v)
-		case reflect.Int:
-			InfoLog.Printf("validate int %v\n", v.Int())
-		case reflect.String:
-			InfoLog.Printf("validate string %s\n", v.String())
-		case reflect.Slice:
-			InfoLog.Println("validate slice")
-			for i := 0; i < v.Len(); i++ {
-				Validate(v.Index(i))
-			}
-		}
-	*/
+	infoLog.Println("List of errors", validationErrors)
+	return validationErrors
 }

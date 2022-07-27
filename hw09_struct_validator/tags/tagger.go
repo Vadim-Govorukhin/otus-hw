@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 )
 
@@ -20,17 +21,15 @@ var (
 
 type Tagger interface {
 	FillField(string) error
-	IsValid(interface{}) (bool, error)
+	IsValid(reflect.Value) error
 }
 
 func ParseTags(tag string, typeField string) (Tagger, error) {
-	InfoLog.Printf("parse tags %s of field type %s", tag, typeField)
-
 	var tagStruct Tagger
 	switch typeField {
-	case "string":
+	case "string", "[]string":
 		tagStruct = &StringTags{}
-	case "int":
+	case "int", "[]int":
 		tagStruct = &IntTags{}
 	default:
 		return nil, ErrUnsupportedTypeField
