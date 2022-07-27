@@ -25,15 +25,8 @@ type Tagger interface {
 }
 
 func ParseTags(tag string, typeField string) (Tagger, error) {
-	var tagStruct Tagger
-	switch typeField {
-	case "string", "[]string":
-		tagStruct = &StringTags{}
-	case "int", "[]int":
-		tagStruct = &IntTags{}
-	default:
-		ErrorLog.Printf("Unsupported type of Field: %s\n", reflect.TypeOf(typeField))
-		ErrorLog.Printf("Unsupported type of Field: %s\n", typeField)
+	tagStruct := chooseTagStruct(typeField)
+	if tagStruct == nil {
 		return nil, ErrUnsupportedTypeField
 	}
 
@@ -47,4 +40,21 @@ func ParseTags(tag string, typeField string) (Tagger, error) {
 		}
 	}
 	return tagStruct, nil
+}
+
+func chooseTagStruct(typeField string) (tagStruct Tagger) {
+	switch typeField {
+	case "string", "[]string":
+		tagStruct = &StringTags{}
+	case "int", "[]int":
+		tagStruct = &IntTags{}
+	default:
+		switch reflect.TypeOf(typeField).String() {
+		case "string", "[]string":
+			tagStruct = &StringTags{}
+		case "int", "[]int":
+			tagStruct = &IntTags{}
+		}
+	}
+	return
 }

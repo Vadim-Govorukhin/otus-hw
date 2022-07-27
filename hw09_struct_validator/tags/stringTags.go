@@ -53,7 +53,7 @@ func (T *StringTags) IsValid(i reflect.Value) error {
 			ErrorLog.Printf("regex error %e", err)
 			return err
 		}
-		if ok := re.MatchString(T.regexp); !ok {
+		if ok := re.MatchString(val); !ok {
 			return ErrInvaildByTag
 		}
 	}

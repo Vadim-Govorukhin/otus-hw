@@ -55,17 +55,6 @@ func TestValidate(t *testing.T) {
 		in          interface{}
 		expectedErr error
 	}{
-		{
-			name: "Store valid",
-			in:   Store{DB{"Hello", -1}},
-			expectedErr: ValidationErrors{
-				{"DataBase", ValidationErrors{
-					{"Name", nil},
-					{"UserId", tags.ErrInvaildByTag},
-				},
-				},
-			},
-		},
 
 		{
 			name: "App valid",
@@ -100,6 +89,18 @@ func TestValidate(t *testing.T) {
 				{"Code", tags.ErrInvaildByTag},
 			},
 		},
+		{
+			name: "Store valid",
+			in:   Store{DB{"Hello", -1}},
+			expectedErr: ValidationErrors{
+				{"DataBase", ValidationErrors{
+					{"Name", nil},
+					{"UserId", tags.ErrInvaildByTag},
+				},
+				},
+			},
+		},
+
 		{
 			name: "User valid",
 			in: User{"123456", "Vadim", 18, "valid@example.com", "admin",

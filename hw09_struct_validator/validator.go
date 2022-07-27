@@ -37,7 +37,6 @@ func Validate(v interface{}) error {
 	infoLog.Printf("start validate struct %+v\n", v)
 	t := reflect.TypeOf(v)
 	val := reflect.ValueOf(v)
-	infoLog.Println(t, val)
 
 	var validationErrors ValidationErrors
 	for i := 0; i < val.NumField(); i++ {
@@ -46,7 +45,6 @@ func Validate(v interface{}) error {
 		infoLog.Printf("search tag 'validate' of field '%v'", f.Name)
 		if tag, ok := f.Tag.Lookup("validate"); ok {
 			fv := val.Field(i)
-			infoLog.Println(f, fv)
 			var err error
 			if f.Type.Kind() == reflect.Struct {
 				err = Validate(fv.Interface())
