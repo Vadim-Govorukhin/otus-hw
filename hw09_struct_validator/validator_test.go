@@ -38,6 +38,15 @@ type (
 		Code int    `validate:"in:200,404,500"`
 		Body string `json:"omitempty"`
 	}
+
+	DB struct {
+		Name   string `validate:"len:5"`
+		UserId int    `validate:"min:0"`
+	}
+
+	Store struct {
+		DataBase DB `validate:"nested"`
+	}
 )
 
 func TestValidate(t *testing.T) {
@@ -46,6 +55,18 @@ func TestValidate(t *testing.T) {
 		in          interface{}
 		expectedErr error
 	}{
+		{
+			name: "Store valid",
+			in:   Store{DB{"Hello", -1}},
+			expectedErr: ValidationErrors{
+				{"DataBase", ValidationErrors{
+					{"Name", nil},
+					{"UserId", tags.ErrInvaildByTag},
+				},
+				},
+			},
+		},
+
 		{
 			name: "App valid",
 			in:   App{"v1.09"},

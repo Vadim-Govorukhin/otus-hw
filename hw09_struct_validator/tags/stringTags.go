@@ -47,18 +47,15 @@ func (T *StringTags) IsValid(i reflect.Value) error {
 	}
 
 	// regex
-	InfoLog.Println("Start check regex")
 	if T.regexp != "" {
 		re, err := regexp.Compile(T.regexp)
 		if err != nil {
 			ErrorLog.Printf("regex error %e", err)
 			return err
 		}
-		InfoLog.Println("Here 1")
 		if ok := re.MatchString(T.regexp); !ok {
 			return ErrInvaildByTag
 		}
-		InfoLog.Println("Here 2")
 	}
 
 	// in
