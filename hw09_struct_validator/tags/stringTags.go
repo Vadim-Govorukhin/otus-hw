@@ -37,10 +37,10 @@ func (T *StringTags) FillField(tag string) error {
 }
 
 func (T *StringTags) IsValid(i reflect.Value) error {
-	s := i.String()
+	val := i.String()
 
 	// len
-	if (T.len != 0) && (len(s) != T.len) {
+	if (T.len != 0) && (len(val) != T.len) {
 		return ErrInvaildByTag
 	}
 
@@ -54,7 +54,7 @@ func (T *StringTags) IsValid(i reflect.Value) error {
 	if len(T.in) != 0 {
 		var flag bool
 		for _, str := range T.in {
-			if str == s {
+			if str == val {
 				flag = true
 				break
 			}

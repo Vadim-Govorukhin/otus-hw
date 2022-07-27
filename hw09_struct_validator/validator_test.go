@@ -2,9 +2,11 @@ package hw09structvalidator
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/Vadim-Govorukhin/otus-hw/hw09_struct_validator/tags"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,7 +43,7 @@ type (
 type App2 struct {
 	Version string `validate:"len:5"`
 	Age     int    `validate:"min:18|max:50"`
-	Ages    []int  `validate:"min:18|max:50"`
+	Ages    []int  `validate:"min:18|max:29"`
 	I       float64
 }
 
@@ -51,9 +53,21 @@ func TestValidate(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			in:          App2{"Hello", 20, []int{18, 29}, 0.0},
-			expectedErr: ValidationErrors{{"Age", ErrUnsupportedTag}},
+			in: App{"VERSION"},
+			expectedErr: ValidationErrors{
+				{"Version", tags.ErrInvaildByTag},
+			},
 		},
+		/*
+			{
+				in: App2{"Hello", 20, []int{19, 50}, 0.0},
+				expectedErr: ValidationErrors{
+					{"Version", nil},
+					{"Age", nil},
+					{"Ages", tags.ErrInvaildByTag},
+				},
+			},
+		*/
 	}
 
 	for i, tt := range testCases {
@@ -62,7 +76,10 @@ func TestValidate(t *testing.T) {
 			t.Parallel()
 
 			err := Validate(tt.in)
-			require.ErrorIs(t, err, tt.expectedErr)
+			fmt.Printf("%#v\n", err)
+			fmt.Printf("%#v\n", tt.expectedErr)
+			fmt.Println(errors.Is(err, tt.expectedErr))
+			require.True(t, errors.Is(err, tt.expectedErr))
 		})
 	}
 }

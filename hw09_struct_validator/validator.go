@@ -1,7 +1,6 @@
 package hw09structvalidator
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -13,12 +12,6 @@ import (
 var (
 	infoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info message
 	errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error message
-)
-
-var (
-	ErrUnsupportedTypeField = errors.New("unsupported type field")
-	ErrUnsupportedTag       = errors.New("unsupported tag")
-	ErrInvaildByTag         = errors.New("field is invalid by tag")
 )
 
 type ValidationError struct {
@@ -34,6 +27,10 @@ func (v ValidationErrors) Error() string {
 		res += fmt.Sprintf("%+v", val)
 	}
 	return res
+}
+
+func (ve ValidationErrors) Is(tgt error) bool {
+	return ve.Error() == tgt.Error()
 }
 
 func Validate(v interface{}) error {
@@ -54,14 +51,28 @@ func Validate(v interface{}) error {
 				return err
 			}
 
-			infoLog.Printf("\tvalidate value '%v' with tags %+v\n", fv, tagStruct)
-			err = tagStruct.IsValid(fv)
-			infoLog.Printf("\tend check with error %v\n", err)
-
+			infoLog.Println(fv.Kind() == reflect.Slice)
+			if fv.Kind() == reflect.Slice {
+				for i := 0; i < fv.Len(); i++ {
+					err = validateField(tagStruct, fv.Index(i))
+					if err != nil {
+						break
+					}
+				}
+			} else {
+				err = validateField(tagStruct, fv)
+			}
 			validationErrors = append(validationErrors, ValidationError{f.Name, err})
 		}
 
 	}
 	infoLog.Println("List of errors", validationErrors)
 	return validationErrors
+}
+
+func validateField(tagStruct tags.Tagger, fv reflect.Value) error {
+	infoLog.Printf("\tvalidate value '%v' with tags %+v\n", fv, tagStruct)
+	err := tagStruct.IsValid(fv)
+	infoLog.Printf("\tend check with error %v\n", err)
+	return err
 }
