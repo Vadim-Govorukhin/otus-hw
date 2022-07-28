@@ -38,7 +38,8 @@ func (T *StringTags) FillField(tag string) error {
 	return nil
 }
 
-func (T *StringTags) IsValid(i reflect.Value) error {
+func (T *StringTags) ValidateValue(i reflect.Value) error {
+	infoLog.Printf("\tvalidate value '%v' with tags %+v\n", i, *T)
 	val := i.String()
 
 	// len

@@ -56,7 +56,8 @@ func (T *IntTags) FillField(tag string) error {
 	return nil
 }
 
-func (T *IntTags) IsValid(i reflect.Value) error {
+func (T *IntTags) ValidateValue(i reflect.Value) error {
+	infoLog.Printf("\tvalidate value '%v' with tags %+v\n", i, *T)
 	val := int(i.Int())
 
 	// min

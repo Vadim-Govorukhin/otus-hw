@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	InfoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info message
+	infoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info message
 	ErrorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error message
 )
 
@@ -21,7 +21,7 @@ var (
 
 type Tagger interface {
 	FillField(string) error
-	IsValid(reflect.Value) error
+	ValidateValue(reflect.Value) error
 }
 
 func ParseTags(tag string, typeField string) (Tagger, error) {

@@ -41,7 +41,7 @@ type (
 
 	DB struct {
 		Name   string `validate:"len:5"`
-		UserId int    `validate:"min:0"`
+		UserID int    `validate:"min:0"`
 	}
 
 	Store struct {
@@ -55,7 +55,6 @@ func TestValidate(t *testing.T) {
 		in          interface{}
 		expectedErr error
 	}{
-
 		{
 			name: "App valid",
 			in:   App{"v1.09"},
@@ -76,14 +75,14 @@ func TestValidate(t *testing.T) {
 			expectedErr: ValidationErrors{},
 		},
 		{
-			name: "Responce valid",
+			name: "Response valid",
 			in:   Response{200, "anything"},
 			expectedErr: ValidationErrors{
 				{"Code", nil},
 			},
 		},
 		{
-			name: "Responce invalid",
+			name: "Response invalid",
 			in:   Response{505, "anything"},
 			expectedErr: ValidationErrors{
 				{"Code", tags.ErrInvaildByTag},
@@ -93,18 +92,22 @@ func TestValidate(t *testing.T) {
 			name: "Store valid",
 			in:   Store{DB{"Hello", -1}},
 			expectedErr: ValidationErrors{
-				{"DataBase", ValidationErrors{
-					{"Name", nil},
-					{"UserId", tags.ErrInvaildByTag},
-				},
+				{
+					"DataBase", ValidationErrors{
+						{"Name", nil},
+						{"UserID", tags.ErrInvaildByTag},
+					},
 				},
 			},
 		},
 
 		{
 			name: "User valid",
-			in: User{"123456", "Vadim", 18, "valid@example.com", "admin",
-				[]string{"12345678901", "10987654321"}, make(json.RawMessage, 2)},
+			in: User{
+				"123456", "Vadim", 18, "valid@example.com", "admin",
+				[]string{"12345678901", "10987654321"},
+				make(json.RawMessage, 2),
+			},
 			expectedErr: ValidationErrors{
 				{"ID", nil},
 				{"Age", nil},
@@ -115,8 +118,11 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "User invalid",
-			in: User{"123456789", "TooYoung", 15, "invalid@open.me.com", "awesomeFishing",
-				[]string{"12345678901", "1098no54321"}, make(json.RawMessage, 2)},
+			in: User{
+				"123456789", "TooYoung", 15, "invalid@open.me.com", "awesomeFishing",
+				[]string{"12345678901", "1098no54321"},
+				make(json.RawMessage, 2),
+			},
 			expectedErr: ValidationErrors{
 				{"ID", tags.ErrInvaildByTag},
 				{"Age", tags.ErrInvaildByTag},
@@ -131,7 +137,7 @@ func TestValidate(t *testing.T) {
 		t.Run(fmt.Sprintf("case %d: %s", i, tt.name), func(t *testing.T) {
 			tt := tt
 			fmt.Printf("============= Start test %s =============\n", tt.name)
-			//t.Parallel()
+			// t.Parallel()
 
 			err := Validate(tt.in)
 			fmt.Printf("%#v\n", err)
