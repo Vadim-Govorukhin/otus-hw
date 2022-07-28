@@ -47,6 +47,21 @@ type (
 	Store struct {
 		DataBase DB `validate:"nested"`
 	}
+
+	SimulTag struct {
+		Name string `validated:"len:5"`
+	}
+
+	WrongApp struct {
+		Version    string   `validate:"len:\"5\""`
+		Name       string   `validate:"len:5:10"`
+		AdminName  string   `validate:"length:5"`
+		Types      []string `validate:"len:5:10"`
+		NumUsers   int      `validate:"min:str"`
+		NumReq     int      `validate:"min:10:11"`
+		NumAdmins  int      `validate:"minimum:0|max:1"`
+		NumFishing []int    `validate:"min:10:11"`
+	}
 )
 
 func TestValidate(t *testing.T) {
@@ -56,11 +71,9 @@ func TestValidate(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			name: "App valid",
-			in:   App{"v1.09"},
-			expectedErr: ValidationErrors{
-				{"Version", nil},
-			},
+			name:        "App valid",
+			in:          App{"v1.09"},
+			expectedErr: ValidationErrors{},
 		},
 		{
 			name: "App invalid",
@@ -75,11 +88,9 @@ func TestValidate(t *testing.T) {
 			expectedErr: ValidationErrors{},
 		},
 		{
-			name: "Response valid",
-			in:   Response{200, "anything"},
-			expectedErr: ValidationErrors{
-				{"Code", nil},
-			},
+			name:        "Response valid",
+			in:          Response{200, "anything"},
+			expectedErr: ValidationErrors{},
 		},
 		{
 			name: "Response invalid",
@@ -94,7 +105,6 @@ func TestValidate(t *testing.T) {
 			expectedErr: ValidationErrors{
 				{
 					"DataBase", ValidationErrors{
-						{"Name", nil},
 						{"UserID", tags.ErrInvaildByTag},
 					},
 				},
@@ -108,13 +118,7 @@ func TestValidate(t *testing.T) {
 				[]string{"12345678901", "10987654321"},
 				make(json.RawMessage, 2),
 			},
-			expectedErr: ValidationErrors{
-				{"ID", nil},
-				{"Age", nil},
-				{"Email", nil},
-				{"Role", nil},
-				{"Phones", nil},
-			},
+			expectedErr: ValidationErrors{},
 		},
 		{
 			name: "User invalid",
@@ -131,13 +135,37 @@ func TestValidate(t *testing.T) {
 				{"Phones", tags.ErrInvaildByTag},
 			},
 		},
+		{
+			name: "WrongApp invalid",
+			in: WrongApp{
+				"1.2.3", "VeryWrong", "Admin",
+				[]string{"Type01", "Type02"},
+				100, 10, 0,
+				[]int{10, 11},
+			},
+			expectedErr: ValidationErrors{
+				{"Version", tags.ErrTagInvalidSyntax},
+				{"Name", tags.ErrTagInvalidSyntax},
+				{"AdminName", tags.ErrUnsupportedTag},
+				{"Types", tags.ErrTagInvalidSyntax},
+				{"NumUsers", tags.ErrTagInvalidSyntax},
+				{"NumReq", tags.ErrTagInvalidSyntax},
+				{"NumAdmins", tags.ErrUnsupportedTag},
+				{"NumFishing", tags.ErrTagInvalidSyntax},
+			},
+		},
+		{
+			name:        "Very simular to validate tag",
+			in:          SimulTag{"HmTag"},
+			expectedErr: ValidationErrors{},
+		},
 	}
 
 	for i, tt := range testCases {
 		t.Run(fmt.Sprintf("case %d: %s", i, tt.name), func(t *testing.T) {
 			tt := tt
 			fmt.Printf("============= Start test %s =============\n", tt.name)
-			// t.Parallel()
+			t.Parallel()
 
 			err := Validate(tt.in)
 			fmt.Printf("%#v\n", err)

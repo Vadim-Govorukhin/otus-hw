@@ -21,22 +21,22 @@ func (T *IntTags) String() string {
 func (T *IntTags) FillField(tag string) error {
 	m := strings.Split(tag, ":")
 	if len(m) > 2 {
-		return ErrUnsupportedTag
+		return ErrTagInvalidSyntax
 	}
 
 	switch m[0] {
 	case "min":
 		i, err := strconv.Atoi(m[1])
 		if err != nil {
-			ErrorLog.Printf("parsing error %e", err)
-			return err
+			errorLog.Printf("strconv.Atoi error %s", err)
+			return ErrTagInvalidSyntax
 		}
 		T.min = &i
 	case "max":
 		i, err := strconv.Atoi(m[1])
 		if err != nil {
-			ErrorLog.Printf("parsing error %e", err)
-			return err
+			errorLog.Printf("strconv.Atoi error %s", err)
+			return ErrTagInvalidSyntax
 		}
 		T.max = &i
 	case "in":
@@ -44,8 +44,8 @@ func (T *IntTags) FillField(tag string) error {
 		for _, s := range strings.Split(m[1], ",") {
 			num, err := strconv.Atoi(s)
 			if err != nil {
-				ErrorLog.Printf("parsing error %e", err)
-				return err
+				errorLog.Printf("strconv.Atoi error %s", err)
+				return ErrTagInvalidSyntax
 			}
 			arr = append(arr, num)
 		}

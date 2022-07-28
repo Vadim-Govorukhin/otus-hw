@@ -16,15 +16,15 @@ type StringTags struct {
 func (T *StringTags) FillField(tag string) error {
 	m := strings.Split(tag, ":")
 	if len(m) > 2 {
-		return ErrUnsupportedTag
+		return ErrTagInvalidSyntax
 	}
 
 	switch m[0] {
 	case "len":
 		i, err := strconv.Atoi(m[1])
 		if err != nil {
-			ErrorLog.Printf("parsing error %e", err)
-			return err
+			errorLog.Printf("strconv.Atoi error %s", err)
+			return ErrTagInvalidSyntax
 		}
 		T.len = i
 	case "regexp":
@@ -32,7 +32,7 @@ func (T *StringTags) FillField(tag string) error {
 	case "in":
 		T.in = strings.Split(m[1], ",")
 	default:
-		ErrorLog.Printf("Unsupported tag name: %s\n", m[0])
+		errorLog.Printf("unsupported tag name: %s\n", m[0])
 		return ErrUnsupportedTag
 	}
 	return nil
@@ -51,7 +51,7 @@ func (T *StringTags) ValidateValue(i reflect.Value) error {
 	if T.regexp != "" {
 		re, err := regexp.Compile(T.regexp)
 		if err != nil {
-			ErrorLog.Printf("regex error %e", err)
+			errorLog.Printf("regex error %s", err)
 			return err
 		}
 		if ok := re.MatchString(val); !ok {

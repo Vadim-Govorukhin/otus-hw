@@ -45,6 +45,7 @@ func Validate(v interface{}) error {
 		infoLog.Printf("search tag 'validate' of field '%v'", f.Name)
 		if tag, ok := f.Tag.Lookup("validate"); ok {
 			fv := val.Field(i)
+
 			var err error
 			if f.Type.Kind() == reflect.Struct {
 				err = Validate(fv.Interface())
@@ -52,10 +53,11 @@ func Validate(v interface{}) error {
 				infoLog.Printf("\tcheck field '%v': value '%v' and tags '%s'", f.Name, fv, tag)
 				err = validateField(fv, tag)
 			}
-			validationErrors = append(validationErrors, ValidationError{f.Name, err})
+			if err != nil {
+				validationErrors = append(validationErrors, ValidationError{f.Name, err})
+			}
 		}
 	}
-	infoLog.Println("List of errors", validationErrors)
 	return validationErrors
 }
 
@@ -63,7 +65,7 @@ func validateField(fv reflect.Value, tag string) error {
 	var err error
 	tagStruct, err := tags.ParseTags(tag, fv.Type().String())
 	if err != nil {
-		errorLog.Printf("parsing error %e", err)
+		errorLog.Printf("tag parsing error %s", err)
 		return err
 	}
 

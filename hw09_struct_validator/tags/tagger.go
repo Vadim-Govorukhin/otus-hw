@@ -10,12 +10,13 @@ import (
 
 var (
 	infoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info message
-	ErrorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error message
+	errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error message
 )
 
 var (
 	ErrUnsupportedTypeField = errors.New("unsupported type field")
 	ErrUnsupportedTag       = errors.New("unsupported tag")
+	ErrTagInvalidSyntax     = errors.New("invalid tag syntax")
 	ErrInvaildByTag         = errors.New("field is invalid by tag")
 )
 
@@ -35,8 +36,8 @@ func ParseTags(tag string, typeField string) (Tagger, error) {
 	for _, t := range slTag {
 		err = tagStruct.FillField(t)
 		if err != nil {
-			ErrorLog.Printf("parsing error %e", err)
-			return nil, ErrUnsupportedTag
+			errorLog.Printf("FiilField error %s", err)
+			return nil, err
 		}
 	}
 	return tagStruct, nil
