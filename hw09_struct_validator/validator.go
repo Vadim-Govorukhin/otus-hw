@@ -56,7 +56,7 @@ func (v ValidationErrors) Is(tgt error) bool {
 		}
 	}
 	return true
-	// return v.Error() == tht.Error() // sync sol.
+	// return v.Error() == tht.Error() .// sync sol.
 }
 
 func (v *ValidationErrors) append(mu *sync.Mutex, name string, err error) {

@@ -42,12 +42,12 @@ func (t *StringTags) ValidateValue(i reflect.Value) error {
 	infoLog.Printf("\tvalidate value '%v' with tags %+v\n", i, *t)
 	val := i.String()
 
-	// len
+	// len.
 	if (t.len != 0) && (len(val) != t.len) {
 		return ErrInvaildByTag
 	}
 
-	// regex
+	// regex.
 	if t.regexp != "" {
 		re, err := regexp.Compile(t.regexp)
 		if err != nil {
@@ -59,7 +59,7 @@ func (t *StringTags) ValidateValue(i reflect.Value) error {
 		}
 	}
 
-	// in
+	// in.
 	if len(t.in) != 0 {
 		var flag bool
 		for _, str := range t.in {

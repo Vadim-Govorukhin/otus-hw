@@ -13,7 +13,7 @@ type IntTags struct {
 	in  []int
 }
 
-// Pretty print
+// Pretty print.
 func (t *IntTags) String() string {
 	return fmt.Sprintf("{min:%v max:%v in:%v}", *t.min, *t.max, t.in)
 }
@@ -60,17 +60,17 @@ func (t *IntTags) ValidateValue(i reflect.Value) error {
 	infoLog.Printf("\tvalidate value '%v' with tags %+v\n", i, *t)
 	val := int(i.Int())
 
-	// min
+	// min.
 	if (t.min != nil) && (val < *t.min) {
 		return ErrInvaildByTag
 	}
 
-	// max
+	// max.
 	if (t.max != nil) && (val > *t.max) {
 		return ErrInvaildByTag
 	}
 
-	// in
+	// in.
 	if (len(t.in) != 0) && ((val < t.in[0]) || (val > t.in[1])) {
 		return ErrInvaildByTag
 	}
