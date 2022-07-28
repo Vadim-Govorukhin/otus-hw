@@ -6,6 +6,7 @@ package hw10programoptimization
 import (
 	"archive/zip"
 	"bytes"
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -29,27 +30,30 @@ var data = `{"Id":1,"Name":"Howard Mendoza","Username":"0Oliver","Email":"aliqui
 // old BenchmarkStats-4              76          14461933 ns/op         1769869 B/op      22376 allocs/op
 // new
 func BenchmarkStats(b *testing.B) {
-	r := bytes.NewBufferString(data)
-	b.ResetTimer()
+	infoLog.SetOutput(ioutil.Discard)
 	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		r := bytes.NewBufferString(data)
+		b.StartTimer()
 		GetDomainStat(r, "biz")
+		b.StopTimer()
 	}
 }
 
 // old BenchmarkStats-4              1        1963230600 ns/op        310943680 B/op   3045380 allocs/op
 func BenchmarkStatsZip(b *testing.B) {
-	r, err := zip.OpenReader("testdata/users.dat.zip")
-	require.NoError(b, err)
-	defer r.Close()
-
-	require.Equal(b, 1, len(r.File))
-
-	data, err := r.File[0].Open()
-	require.NoError(b, err)
-
-	b.ResetTimer()
+	infoLog.SetOutput(ioutil.Discard)
 	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		r, _ := zip.OpenReader("testdata/users.dat.zip")
+		defer r.Close()
+
+		data, _ := r.File[0].Open()
+
+		b.StartTimer()
 		GetDomainStat(data, "biz")
+		b.StopTimer()
 	}
 }
 

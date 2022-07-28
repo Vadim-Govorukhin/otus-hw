@@ -2,7 +2,6 @@ package hw10programoptimization
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -29,16 +28,14 @@ type User struct {
 
 type DomainStat map[string]int
 
-type users [100_000]User
-
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	nWorkers := 5
 	var tasks = make(chan string)
 
-	var usersCh = make(chan User, 2*nWorkers)
+	var usersCh = make(chan User)
 
-	var errors = make(chan error)
-	defer close(errors)
+	//var errors = make(chan error)
+	//defer close(errors)
 
 	var wg sync.WaitGroup
 	// Workers.
@@ -47,14 +44,13 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 		go func(i int) {
 			defer wg.Done()
 			defer infoLog.Printf("[goroutine %v] end\n", i)
-			infoLog.Printf("[goroutine %v] start\n", i)
 			var err error
 			for task := range tasks {
 				infoLog.Printf("[goroutine %v] take task '%s'\n", i, task)
 				var user User
-				if err = json.Unmarshal([]byte(task), &user); err != nil {
-					errorLog.Printf("[goroutine %v] exit with error: %s", i, err)
-					errors <- err
+				if err = workForWorker(task, &user); err != nil {
+					errorLog.Printf("[goroutine %v] exit task '%s' with error: %s", i, task, err)
+					//errors <- err
 					break
 				}
 				usersCh <- user
@@ -67,7 +63,7 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	go func() {
 		content, err := ioutil.ReadAll(r)
 		if err != nil {
-			errors <- err
+			//errors <- err
 			return
 		}
 		infoLog.Println("[sender] start sending tasks")
@@ -83,54 +79,9 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 		close(usersCh)
 	}()
 
-	var u users
-	var i int
-	for {
-		select {
-		case err := <-errors:
-			errorLog.Printf("[main] get error %s", err)
-			close(tasks)
-			return nil, fmt.Errorf("get users error: %w", err)
-		case user, ok := <-usersCh:
-			if !ok {
-				infoLog.Print("[main] received all users")
-				return countDomains(u, domain)
-			}
-			u[i] = user
-			i++
-		}
-	}
-	/*
-			u, err := getUsers(r)
-		if err != nil {
-			return nil, fmt.Errorf("get users error: %w", err)
-		}
-		return countDomains(u, domain)
-	*/
-}
-
-func getUsers(r io.Reader) (result users, err error) {
-	content, err := ioutil.ReadAll(r)
-	if err != nil {
-		return
-	}
-
-	lines := strings.Split(string(content), "\n")
-
-	for i, line := range lines {
-		var user User
-		if err = json.Unmarshal([]byte(line), &user); err != nil {
-			return
-		}
-		result[i] = user
-	}
-	return
-}
-
-func countDomains(u users, domain string) (DomainStat, error) {
 	result := make(DomainStat)
 
-	for _, user := range u {
+	for user := range usersCh {
 		matched, err := regexp.Match("\\."+domain, []byte(user.Email))
 		if err != nil {
 			return nil, err
@@ -143,4 +94,9 @@ func countDomains(u users, domain string) (DomainStat, error) {
 		}
 	}
 	return result, nil
+
+}
+
+func workForWorker(task string, user *User) error {
+	return json.Unmarshal([]byte(task), user)
 }
