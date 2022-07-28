@@ -13,7 +13,7 @@ type StringTags struct {
 	in     []string
 }
 
-func (T *StringTags) FillField(tag string) error {
+func (t *StringTags) FillField(tag string) error {
 	m := strings.Split(tag, ":")
 	if len(m) > 2 {
 		return ErrTagInvalidSyntax
@@ -26,11 +26,11 @@ func (T *StringTags) FillField(tag string) error {
 			errorLog.Printf("strconv.Atoi error %s", err)
 			return ErrTagInvalidSyntax
 		}
-		T.len = i
+		t.len = i
 	case "regexp":
-		T.regexp = m[1]
+		t.regexp = m[1]
 	case "in":
-		T.in = strings.Split(m[1], ",")
+		t.in = strings.Split(m[1], ",")
 	default:
 		errorLog.Printf("unsupported tag name: %s\n", m[0])
 		return ErrUnsupportedTag
@@ -38,18 +38,18 @@ func (T *StringTags) FillField(tag string) error {
 	return nil
 }
 
-func (T *StringTags) ValidateValue(i reflect.Value) error {
-	infoLog.Printf("\tvalidate value '%v' with tags %+v\n", i, *T)
+func (t *StringTags) ValidateValue(i reflect.Value) error {
+	infoLog.Printf("\tvalidate value '%v' with tags %+v\n", i, *t)
 	val := i.String()
 
 	// len
-	if (T.len != 0) && (len(val) != T.len) {
+	if (t.len != 0) && (len(val) != t.len) {
 		return ErrInvaildByTag
 	}
 
 	// regex
-	if T.regexp != "" {
-		re, err := regexp.Compile(T.regexp)
+	if t.regexp != "" {
+		re, err := regexp.Compile(t.regexp)
 		if err != nil {
 			errorLog.Printf("regex error %s", err)
 			return err
@@ -60,9 +60,9 @@ func (T *StringTags) ValidateValue(i reflect.Value) error {
 	}
 
 	// in
-	if len(T.in) != 0 {
+	if len(t.in) != 0 {
 		var flag bool
-		for _, str := range T.in {
+		for _, str := range t.in {
 			if str == val {
 				flag = true
 				break

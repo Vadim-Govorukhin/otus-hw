@@ -14,11 +14,11 @@ type IntTags struct {
 }
 
 // Pretty print
-func (T *IntTags) String() string {
-	return fmt.Sprintf("{min:%v max:%v in:%v}", *T.min, *T.max, T.in)
+func (t *IntTags) String() string {
+	return fmt.Sprintf("{min:%v max:%v in:%v}", *t.min, *t.max, t.in)
 }
 
-func (T *IntTags) FillField(tag string) error {
+func (t *IntTags) FillField(tag string) error {
 	m := strings.Split(tag, ":")
 	if len(m) > 2 {
 		return ErrTagInvalidSyntax
@@ -31,14 +31,14 @@ func (T *IntTags) FillField(tag string) error {
 			errorLog.Printf("strconv.Atoi error %s", err)
 			return ErrTagInvalidSyntax
 		}
-		T.min = &i
+		t.min = &i
 	case "max":
 		i, err := strconv.Atoi(m[1])
 		if err != nil {
 			errorLog.Printf("strconv.Atoi error %s", err)
 			return ErrTagInvalidSyntax
 		}
-		T.max = &i
+		t.max = &i
 	case "in":
 		var arr []int
 		for _, s := range strings.Split(m[1], ",") {
@@ -49,29 +49,29 @@ func (T *IntTags) FillField(tag string) error {
 			}
 			arr = append(arr, num)
 		}
-		T.in = arr
+		t.in = arr
 	default:
 		return ErrUnsupportedTag
 	}
 	return nil
 }
 
-func (T *IntTags) ValidateValue(i reflect.Value) error {
-	infoLog.Printf("\tvalidate value '%v' with tags %+v\n", i, *T)
+func (t *IntTags) ValidateValue(i reflect.Value) error {
+	infoLog.Printf("\tvalidate value '%v' with tags %+v\n", i, *t)
 	val := int(i.Int())
 
 	// min
-	if (T.min != nil) && (val < *T.min) {
+	if (t.min != nil) && (val < *t.min) {
 		return ErrInvaildByTag
 	}
 
 	// max
-	if (T.max != nil) && (val > *T.max) {
+	if (t.max != nil) && (val > *t.max) {
 		return ErrInvaildByTag
 	}
 
 	// in
-	if (len(T.in) != 0) && ((val < T.in[0]) || (val > T.in[1])) {
+	if (len(t.in) != 0) && ((val < t.in[0]) || (val > t.in[1])) {
 		return ErrInvaildByTag
 	}
 
