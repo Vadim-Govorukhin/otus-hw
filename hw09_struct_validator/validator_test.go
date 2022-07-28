@@ -105,7 +105,7 @@ func TestValidate(t *testing.T) {
 			},
 		},
 		{
-			name: "Store valid",
+			name: "Store invalid",
 			in:   Store{DB{"Hello", -1}},
 			expectedErr: ValidationErrors{
 				{
@@ -173,9 +173,8 @@ func TestValidate(t *testing.T) {
 			t.Parallel()
 
 			err := Validate(tt.in)
-			fmt.Printf("%#v\n", err)
-			fmt.Printf("%#v\n", tt.expectedErr)
-			fmt.Println(errors.Is(err, tt.expectedErr))
+			fmt.Printf("Is Errors equal? %v\n%+v\n%+v\n",
+				errors.Is(err, tt.expectedErr), err, tt.expectedErr)
 			require.True(t, errors.Is(err, tt.expectedErr))
 		})
 	}
