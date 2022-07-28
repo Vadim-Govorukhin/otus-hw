@@ -1,6 +1,7 @@
 package hw09structvalidator
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -13,6 +14,8 @@ var (
 	infoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info message
 	errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error message
 )
+
+var ErrNoStruct = errors.New("input is not struct")
 
 type ValidationError struct {
 	Field string
@@ -34,10 +37,13 @@ func (v ValidationErrors) Is(tgt error) bool {
 }
 
 func Validate(v interface{}) error {
-	infoLog.Printf("start validate struct %+v\n", v)
 	t := reflect.TypeOf(v)
 	val := reflect.ValueOf(v)
+	if t.Kind() != reflect.Struct {
+		return ErrNoStruct
+	}
 
+	infoLog.Printf("start validate struct %+v\n", v)
 	var validationErrors ValidationErrors
 	for i := 0; i < val.NumField(); i++ {
 		f := t.Field(i)

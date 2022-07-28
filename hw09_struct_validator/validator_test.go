@@ -71,6 +71,11 @@ func TestValidate(t *testing.T) {
 		expectedErr error
 	}{
 		{
+			name:        "Not structure",
+			in:          "I am fake structure",
+			expectedErr: ErrNoStruct,
+		},
+		{
 			name:        "App valid",
 			in:          App{"v1.09"},
 			expectedErr: ValidationErrors{},
