@@ -1,9 +1,9 @@
 package hw10programoptimization
 
 import (
+	"bufio"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -34,8 +34,8 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 
 	var usersCh = make(chan User)
 
-	//var errors = make(chan error)
-	//defer close(errors)
+	var errors = make(chan error)
+	defer close(errors)
 
 	var wg sync.WaitGroup
 	// Workers.
@@ -50,7 +50,7 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 				var user User
 				if err = workForWorker(task, &user); err != nil {
 					errorLog.Printf("[goroutine %v] exit task '%s' with error: %s", i, task, err)
-					//errors <- err
+					errors <- err
 					break
 				}
 				usersCh <- user
@@ -61,40 +61,51 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	}
 
 	go func() {
-		content, err := ioutil.ReadAll(r)
-		if err != nil {
-			//errors <- err
-			return
-		}
+		defer func() {
+			close(tasks)
+			wg.Wait()
+			infoLog.Println("[sender] all goroutines stopped, close usersCh")
+			close(usersCh)
+		}()
+
+		scanner := bufio.NewScanner(r)
+		scanner.Split(bufio.ScanLines)
+
+		var err error
 		infoLog.Println("[sender] start sending tasks")
-		lines := strings.Split(string(content), "\n")
-		for _, line := range lines {
+		for scanner.Scan() {
+			err = scanner.Err()
+			if err != nil {
+				errors <- err
+				return
+			}
 			infoLog.Println("[sender] sending task")
-			tasks <- line
+			tasks <- scanner.Text()
 		}
 		infoLog.Println("[sender] send all tasks, close tasks")
-		close(tasks)
-		wg.Wait()
-		infoLog.Println("[sender] all goroutines stopped, close usersCh")
-		close(usersCh)
 	}()
 
 	result := make(DomainStat)
 
-	for user := range usersCh {
-		matched, err := regexp.Match("\\."+domain, []byte(user.Email))
-		if err != nil {
+	for {
+		select {
+		case err := <-errors:
 			return nil, err
-		}
+		case user, ok := <-usersCh:
+			if !ok {
+				return result, nil
+			}
+			matched, err := regexp.Match("\\."+domain, []byte(user.Email))
+			if err != nil {
+				errors <- err
+				continue
+			}
 
-		if matched {
-			num := result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])]
-			num++
-			result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])] = num
+			if matched {
+				result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])] += 1
+			}
 		}
 	}
-	return result, nil
-
 }
 
 func workForWorker(task string, user *User) error {
