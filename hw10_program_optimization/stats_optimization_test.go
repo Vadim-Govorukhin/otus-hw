@@ -32,11 +32,11 @@ var data = `{"Id":1,"Name":"Howard Mendoza","Username":"0Oliver","Email":"aliqui
 func BenchmarkStats(b *testing.B) {
 	infoLog.SetOutput(ioutil.Discard)
 	for i := 0; i < b.N; i++ {
-		b.StopTimer()
+		//b.StopTimer()
 		r := bytes.NewBufferString(data)
-		b.StartTimer()
+		//b.StartTimer()
 		GetDomainStat(r, "biz")
-		b.StopTimer()
+		//b.StopTimer()
 	}
 }
 
@@ -44,26 +44,28 @@ func BenchmarkStats(b *testing.B) {
 func BenchmarkStatsZip(b *testing.B) {
 	infoLog.SetOutput(ioutil.Discard)
 	for i := 0; i < b.N; i++ {
-		b.StopTimer()
+		//b.StopTimer()
 
 		r, _ := zip.OpenReader("testdata/users.dat.zip")
 		defer r.Close()
 
 		data, _ := r.File[0].Open()
 
-		b.StartTimer()
+		//b.StartTimer()
 		GetDomainStat(data, "biz")
-		b.StopTimer()
+		//b.StopTimer()
 	}
 }
 
 // go test -v -count=1 -timeout=30s -tags bench .
 func TestGetDomainStat_Time_And_Memory(t *testing.T) {
+	infoLog.SetOutput(ioutil.Discard)
 	bench := func(b *testing.B) {
 		b.Helper()
 		b.StopTimer()
 
 		r, err := zip.OpenReader("testdata/users.dat.zip")
+		//r, err := zip.OpenReader("testdata/users.dat30k.zip")
 		require.NoError(t, err)
 		defer r.Close()
 
@@ -79,6 +81,7 @@ func TestGetDomainStat_Time_And_Memory(t *testing.T) {
 
 		// add check from file
 		require.Equal(t, expectedBizStat, stat)
+		//require.Equal(t, stat, stat)
 	}
 
 	result := testing.Benchmark(bench)

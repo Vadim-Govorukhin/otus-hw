@@ -17,13 +17,13 @@ var (
 )
 
 type User struct {
-	ID       int
-	Name     string
-	Username string
+	ID       int    `json:"-"`
+	Name     string `json:"-"`
+	Username string `json:"-"`
 	Email    string
-	Phone    string
-	Password string
-	Address  string
+	Phone    string `json:"-"`
+	Password string `json:"-"`
+	Address  string `json:"-"`
 }
 
 type DomainStat map[string]int
@@ -32,7 +32,7 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	nWorkers := 5
 	var tasks = make(chan string)
 
-	var usersCh = make(chan User)
+	var usersCh = make(chan string)
 
 	var errors = make(chan error)
 	defer close(errors)
@@ -40,6 +40,7 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	var wg sync.WaitGroup
 	// Workers.
 	wg.Add(nWorkers)
+	//var p fastjson.Parser
 	for i := 0; i < nWorkers; i++ {
 		go func(i int) {
 			defer wg.Done()
@@ -53,7 +54,16 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 					errors <- err
 					break
 				}
-				usersCh <- user
+				usersCh <- user.Email
+				/*
+					email, err := workForWorkerTest(task, p)
+					if err != nil {
+						errorLog.Printf("[goroutine %v] exit task '%s' with error: %s", i, task, err)
+						errors <- err
+						break
+					}
+					usersCh <- email
+				*/
 				infoLog.Printf("[goroutine %v] send user", i)
 			}
 
@@ -86,23 +96,21 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	}()
 
 	result := make(DomainStat)
+	re, err := regexp.Compile("\\." + domain)
+	if err != nil {
+		return nil, err
 
+	}
 	for {
 		select {
 		case err := <-errors:
 			return nil, err
-		case user, ok := <-usersCh:
+		case userEmail, ok := <-usersCh:
 			if !ok {
 				return result, nil
 			}
-			matched, err := regexp.Match("\\."+domain, []byte(user.Email))
-			if err != nil {
-				errors <- err
-				continue
-			}
-
-			if matched {
-				result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])] += 1
+			if matched := re.Match([]byte(userEmail)); matched {
+				result[strings.ToLower(strings.SplitN(userEmail, "@", 2)[1])] += 1
 			}
 		}
 	}
@@ -111,3 +119,10 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 func workForWorker(task string, user *User) error {
 	return json.Unmarshal([]byte(task), user)
 }
+
+/*
+func workForWorkerTest(task string, p fastjson.Parser) (string, error) {
+	v, err := p.Parse(task)
+	return string(v.GetStringBytes("Email")), err
+}
+*/
