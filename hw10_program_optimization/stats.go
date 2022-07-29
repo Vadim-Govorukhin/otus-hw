@@ -28,42 +28,45 @@ type User struct {
 
 type DomainStat map[string]int
 
+type DomainStruct struct {
+	stat DomainStat
+	mu   sync.Mutex
+}
+
+func (d *DomainStruct) Add(key string) {
+	d.mu.Lock()
+	d.stat[key] += 1
+	d.mu.Unlock()
+}
+
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	nWorkers := 5
 	var tasks = make(chan string)
-
 	var usersCh = make(chan string)
-
 	var errors = make(chan error)
-	defer close(errors)
 
-	var wg sync.WaitGroup
+	result := DomainStruct{stat: make(DomainStat)}
+	re, err := regexp.Compile("@(?P<Domain>\\w+\\." + domain + ")")
+	if err != nil {
+		return nil, err
+	}
+
 	// Workers.
+	var wg sync.WaitGroup
 	wg.Add(nWorkers)
-	//var p fastjson.Parser
 	for i := 0; i < nWorkers; i++ {
 		go func(i int) {
 			defer wg.Done()
 			defer infoLog.Printf("[goroutine %v] end\n", i)
-			var err error
+
 			for task := range tasks {
 				infoLog.Printf("[goroutine %v] take task '%s'\n", i, task)
 				var user User
-				if err = workForWorker(task, &user); err != nil {
+				if err := workForWorker(task, &user, re, &result); err != nil {
 					errorLog.Printf("[goroutine %v] exit task '%s' with error: %s", i, task, err)
 					errors <- err
 					break
 				}
-				usersCh <- user.Email
-				/*
-					email, err := workForWorkerTest(task, p)
-					if err != nil {
-						errorLog.Printf("[goroutine %v] exit task '%s' with error: %s", i, task, err)
-						errors <- err
-						break
-					}
-					usersCh <- email
-				*/
 				infoLog.Printf("[goroutine %v] send user", i)
 			}
 
@@ -76,6 +79,7 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 			wg.Wait()
 			infoLog.Println("[sender] all goroutines stopped, close usersCh")
 			close(usersCh)
+			close(errors)
 		}()
 
 		scanner := bufio.NewScanner(r)
@@ -91,38 +95,31 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 			}
 			infoLog.Println("[sender] sending task")
 			tasks <- scanner.Text()
+			//tasks <- scanner.Bytes()
 		}
 		infoLog.Println("[sender] send all tasks, close tasks")
 	}()
 
-	result := make(DomainStat)
-	re, err := regexp.Compile("\\." + domain)
-	if err != nil {
+	for err := range errors {
 		return nil, err
-
 	}
-	for {
-		select {
-		case err := <-errors:
-			return nil, err
-		case userEmail, ok := <-usersCh:
-			if !ok {
-				return result, nil
-			}
-			if matched := re.Match([]byte(userEmail)); matched {
-				result[strings.ToLower(strings.SplitN(userEmail, "@", 2)[1])] += 1
-			}
+	return result.stat, nil
+}
+
+func workForWorker(task string, user *User, re *regexp.Regexp, result *DomainStruct) error {
+	err := json.Unmarshal([]byte(task), user)
+	if err != nil {
+		return err
+	}
+
+	if email := re.FindStringSubmatch(user.Email); email != nil {
+		result.Add(strings.ToLower(email[1]))
+	}
+
+	/*
+		if matched := re.Match([]byte(user.Email)); matched {
+			result.Add(strings.ToLower(strings.SplitN(user.Email, "@", 2)[1]))
 		}
-	}
+	*/
+	return nil
 }
-
-func workForWorker(task string, user *User) error {
-	return json.Unmarshal([]byte(task), user)
-}
-
-/*
-func workForWorkerTest(task string, p fastjson.Parser) (string, error) {
-	v, err := p.Parse(task)
-	return string(v.GetStringBytes("Email")), err
-}
-*/
