@@ -2,7 +2,6 @@ package hw10programoptimization
 
 import (
 	"bufio"
-	"encoding/json"
 	"io"
 	"log"
 	"os"
@@ -40,13 +39,14 @@ func (d *DomainStruct) Add(key string) {
 }
 
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
-	nWorkers := 5
+	nWorkers := 10
 	var tasks = make(chan string)
 	var usersCh = make(chan string)
 	var errors = make(chan error)
 
 	result := DomainStruct{stat: make(DomainStat)}
-	re, err := regexp.Compile("@(?P<Domain>\\w+\\." + domain + ")")
+	//re, err := regexp.Compile("@(?P<Domain>\\w+\\." + domain + ")")
+	re2, err := regexp.Compile("\"Email\":\".+@(?P<Domain>\\w+\\." + domain + ")")
 	if err != nil {
 		return nil, err
 	}
@@ -58,11 +58,10 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 		go func(i int) {
 			defer wg.Done()
 			defer infoLog.Printf("[goroutine %v] end\n", i)
-
 			for task := range tasks {
 				infoLog.Printf("[goroutine %v] take task '%s'\n", i, task)
 				var user User
-				if err := workForWorker(task, &user, re, &result); err != nil {
+				if err := workForWorker(task, &user, re2, &result); err != nil {
 					errorLog.Printf("[goroutine %v] exit task '%s' with error: %s", i, task, err)
 					errors <- err
 					break
@@ -103,23 +102,24 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	for err := range errors {
 		return nil, err
 	}
+
 	return result.stat, nil
 }
 
 func workForWorker(task string, user *User, re *regexp.Regexp, result *DomainStruct) error {
-	err := json.Unmarshal([]byte(task), user)
-	if err != nil {
-		return err
-	}
-
-	if email := re.FindStringSubmatch(user.Email); email != nil {
+	if email := re.FindStringSubmatch(task); email != nil {
 		result.Add(strings.ToLower(email[1]))
 	}
-
 	/*
-		if matched := re.Match([]byte(user.Email)); matched {
-			result.Add(strings.ToLower(strings.SplitN(user.Email, "@", 2)[1]))
+		err := json.Unmarshal([]byte(task), user)
+		if err != nil {
+			return err
 		}
+
+		if email := re.FindStringSubmatch(user.Email); email != nil {
+			result.Add(strings.ToLower(email[1]))
+		}
+
 	*/
 	return nil
 }
