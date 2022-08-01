@@ -32,28 +32,44 @@ var data = `{"Id":1,"Name":"Howard Mendoza","Username":"0Oliver","Email":"aliqui
 func BenchmarkStats(b *testing.B) {
 	infoLog.SetOutput(ioutil.Discard)
 	for i := 0; i < b.N; i++ {
-		//b.StopTimer()
+		b.StopTimer()
 		r := bytes.NewBufferString(data)
-		//b.StartTimer()
+		b.StartTimer()
 		GetDomainStat(r, "biz")
-		//b.StopTimer()
+		b.StopTimer()
 	}
 }
 
 // old BenchmarkStats-4              1        1963230600 ns/op        310943680 B/op   3045380 allocs/op
-func BenchmarkStatsZip(b *testing.B) {
+func BenchmarkStatsZipEasy_10(b *testing.B) {
 	infoLog.SetOutput(ioutil.Discard)
 	for i := 0; i < b.N; i++ {
-		//b.StopTimer()
+		b.StopTimer()
 
 		r, _ := zip.OpenReader("testdata/users.dat.zip")
 		defer r.Close()
 
 		data, _ := r.File[0].Open()
 
-		//b.StartTimer()
-		GetDomainStat(data, "biz")
-		//b.StopTimer()
+		b.StartTimer()
+		GetDomainStat_easy_10(data, "biz")
+		b.StopTimer()
+	}
+}
+
+func BenchmarkStatsZipRegex_10(b *testing.B) {
+	infoLog.SetOutput(ioutil.Discard)
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		r, _ := zip.OpenReader("testdata/users.dat.zip")
+		defer r.Close()
+
+		data, _ := r.File[0].Open()
+
+		b.StartTimer()
+		GetDomainStat_reg_10(data, "biz")
+		b.StopTimer()
 	}
 }
 
@@ -91,7 +107,76 @@ func TestGetDomainStat_Time_And_Memory(t *testing.T) {
 
 	require.Less(t, int64(result.T), int64(timeLimit), "the program is too slow")
 	require.Less(t, mem, memoryLimit, "the program is too greedy")
+}
 
+func TestGetDomainStat_Time_And_Memory_easy_10(t *testing.T) {
+	infoLog.SetOutput(ioutil.Discard)
+	bench := func(b *testing.B) {
+		b.Helper()
+		b.StopTimer()
+
+		r, err := zip.OpenReader("testdata/users.dat.zip")
+		//r, err := zip.OpenReader("testdata/users.dat30k.zip")
+		require.NoError(t, err)
+		defer r.Close()
+
+		require.Equal(t, 1, len(r.File))
+
+		data, err := r.File[0].Open()
+		require.NoError(t, err)
+
+		b.StartTimer()
+		stat, err := GetDomainStat_easy_10(data, "biz")
+		b.StopTimer()
+		require.NoError(t, err)
+
+		// add check from file
+		require.Equal(t, expectedBizStat, stat)
+		//require.Equal(t, stat, stat)
+	}
+
+	result := testing.Benchmark(bench)
+	mem := result.MemBytes
+	t.Logf("time used: %s / %s", result.T, timeLimit)
+	t.Logf("memory used: %dMb / %dMb", mem/mb, memoryLimit/mb)
+
+	require.Less(t, int64(result.T), int64(timeLimit), "the program is too slow")
+	require.Less(t, mem, memoryLimit, "the program is too greedy")
+}
+
+func TestGetDomainStat_Time_And_Memory_reg_10(t *testing.T) {
+	infoLog.SetOutput(ioutil.Discard)
+	bench := func(b *testing.B) {
+		b.Helper()
+		b.StopTimer()
+
+		r, err := zip.OpenReader("testdata/users.dat.zip")
+		//r, err := zip.OpenReader("testdata/users.dat30k.zip")
+		require.NoError(t, err)
+		defer r.Close()
+
+		require.Equal(t, 1, len(r.File))
+
+		data, err := r.File[0].Open()
+		require.NoError(t, err)
+
+		b.StartTimer()
+		stat, err := GetDomainStat_reg_10(data, "biz")
+		b.StopTimer()
+		require.NoError(t, err)
+
+		// add check from file
+		require.Equal(t, expectedBizStat, stat)
+		//require.Equal(t, stat, stat)
+	}
+
+	result := testing.Benchmark(bench)
+	mem := result.MemBytes
+	t.Logf("time used: %s / %s", result.T, timeLimit)
+	t.Logf("memory used: %dMb / %dMb", mem/mb, memoryLimit/mb)
+
+	require.Less(t, int64(result.T), int64(timeLimit), "the program is too slow")
+	require.Less(t, mem, memoryLimit, "the program is too greedy")
 }
 
 var expectedBizStat = DomainStat{

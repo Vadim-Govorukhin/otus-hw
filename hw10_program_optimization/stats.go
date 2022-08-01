@@ -2,19 +2,22 @@ package hw10programoptimization
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"regexp"
 	"strings"
 	"sync"
+
+	easyjson "github.com/mailru/easyjson"
 )
 
 var (
-	infoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info message
-	errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error message
+	infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime) // for info message
 )
 
+//easyjson:json
 type User struct {
 	ID       int    `json:"-"`
 	Name     string `json:"-"`
@@ -27,30 +30,15 @@ type User struct {
 
 type DomainStat map[string]int
 
-type DomainStruct struct {
-	stat DomainStat
-	mu   sync.Mutex
-}
-
-func (d *DomainStruct) Add(key string) {
-	d.mu.Lock()
-	d.stat[key] += 1
-	d.mu.Unlock()
-}
-
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	nWorkers := 10
 	var tasks = make(chan string)
-	var usersCh = make(chan string)
 	var errors = make(chan error)
 
-	result := DomainStruct{stat: make(DomainStat)}
-	//re, err := regexp.Compile("@(?P<Domain>\\w+\\." + domain + ")")
-	re2, err := regexp.Compile("\"Email\":\".+@(?P<Domain>\\w+\\." + domain + ")")
-	if err != nil {
-		return nil, err
-	}
-
+	//result := DomainStruct{stat: make(DomainStat)}
+	re := regexp.MustCompile("@(?P<Domain>\\w+\\." + domain + ")")
+	//re := regexp.MustCompile(`"Email":".+@(?P<Domain>\w+\.` + domain + ")")
+	resultSl := make([]DomainStat, nWorkers)
 	// Workers.
 	var wg sync.WaitGroup
 	wg.Add(nWorkers)
@@ -58,15 +46,14 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 		go func(i int) {
 			defer wg.Done()
 			defer infoLog.Printf("[goroutine %v] end\n", i)
+			resultSl[i] = make(DomainStat, 100)
 			for task := range tasks {
 				infoLog.Printf("[goroutine %v] take task '%s'\n", i, task)
 				var user User
-				if err := workForWorker(task, &user, re2, &result); err != nil {
-					errorLog.Printf("[goroutine %v] exit task '%s' with error: %s", i, task, err)
-					errors <- err
+				if err := workForWorker(task, &user, re, &resultSl[i]); err != nil {
+					errors <- fmt.Errorf("[goroutine %v] exit task '%s' with error: %w", i, task, err)
 					break
 				}
-				infoLog.Printf("[goroutine %v] send user", i)
 			}
 
 		}(i)
@@ -74,10 +61,10 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 
 	go func() {
 		defer func() {
+			infoLog.Println("[sender] send all tasks, close tasks")
 			close(tasks)
 			wg.Wait()
-			infoLog.Println("[sender] all goroutines stopped, close usersCh")
-			close(usersCh)
+			infoLog.Println("[sender] all goroutines stopped, close errors")
 			close(errors)
 		}()
 
@@ -92,34 +79,37 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 				errors <- err
 				return
 			}
-			infoLog.Println("[sender] sending task")
 			tasks <- scanner.Text()
-			//tasks <- scanner.Bytes()
 		}
-		infoLog.Println("[sender] send all tasks, close tasks")
 	}()
 
 	for err := range errors {
 		return nil, err
 	}
 
-	return result.stat, nil
+	result := resultSl[0]
+	for i := 1; i < nWorkers; i++ {
+		for key, val := range resultSl[i] {
+			result[key] += val
+		}
+	}
+
+	return result, nil
 }
 
-func workForWorker(task string, user *User, re *regexp.Regexp, result *DomainStruct) error {
-	if email := re.FindStringSubmatch(task); email != nil {
-		result.Add(strings.ToLower(email[1]))
+func workForWorker(task string, user *User, re *regexp.Regexp, result *DomainStat) error {
+	// if email := re.FindStringSubmatch(task); email != nil {
+	// 	//(*result)[strings.ToLower(email[1])] += 1
+	// }
+
+	err := easyjson.Unmarshal([]byte(task), user)
+	if err != nil {
+		return err
 	}
-	/*
-		err := json.Unmarshal([]byte(task), user)
-		if err != nil {
-			return err
-		}
 
-		if email := re.FindStringSubmatch(user.Email); email != nil {
-			result.Add(strings.ToLower(email[1]))
-		}
+	if email := re.FindStringSubmatch(user.Email); email != nil {
+		(*result)[strings.ToLower(email[1])] += 1
+	}
 
-	*/
 	return nil
 }
