@@ -2,40 +2,33 @@ package hw10programoptimization
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"regexp"
 	"strings"
 	"sync"
 )
 
-func GetDomainStat_reg_10(r io.Reader, domain string) (DomainStat, error) {
+func GetDomainStatRegexp(r io.Reader, domain string) (DomainStat, error) {
 	nWorkers := 10
-	var tasks = make(chan string)
-	var usersCh = make(chan string)
-	var errors = make(chan error)
+	tasks := make(chan string)
+	usersCh := make(chan string)
+	errors := make(chan error)
 
-	//result := DomainStruct{stat: make(DomainStat)}
 	re := regexp.MustCompile("@(?P<Domain>\\w+\\." + domain + ")")
-	//re2 := regexp.MustCompile(`"Email":".+@(?P<Domain>\w+\.` + domain + ")")
-	result_tmp := make([]DomainStat, nWorkers)
+
 	// Workers.
+	resultSl := make([]DomainStat, nWorkers)
 	var wg sync.WaitGroup
 	wg.Add(nWorkers)
 	for i := 0; i < nWorkers; i++ {
 		go func(i int) {
 			defer wg.Done()
 			defer infoLog.Printf("[goroutine %v] end\n", i)
-			result_tmp[i] = make(DomainStat, 100)
+			resultSl[i] = make(DomainStat, 100)
 			for task := range tasks {
-				//infoLog.Printf("[goroutine %v] take task '%s'\n", i, task)
-				var user User
-				if err := workForWorker_reg_10(task, &user, re, &result_tmp[i]); err != nil {
-					errors <- fmt.Errorf("[goroutine %v] exit task '%s' with error: %w", i, task, err)
-					break
-				}
+				infoLog.Printf("[goroutine %v] take task '%s'\n", i, task)
+				workForWorkerRegexp(task, re, &resultSl[i])
 			}
-
 		}(i)
 	}
 
@@ -52,11 +45,9 @@ func GetDomainStat_reg_10(r io.Reader, domain string) (DomainStat, error) {
 		scanner := bufio.NewScanner(r)
 		scanner.Split(bufio.ScanLines)
 
-		var err error
 		infoLog.Println("[sender] start sending tasks")
 		for scanner.Scan() {
-			err = scanner.Err()
-			if err != nil {
+			if err := scanner.Err(); err != nil {
 				errors <- err
 				return
 			}
@@ -68,22 +59,17 @@ func GetDomainStat_reg_10(r io.Reader, domain string) (DomainStat, error) {
 		return nil, err
 	}
 
-	res := result_tmp[0]
+	res := resultSl[0]
 	for i := 1; i < nWorkers; i++ {
-		for key, val := range result_tmp[i] {
+		for key, val := range resultSl[i] {
 			res[key] += val
 		}
 	}
-
-	//return result.stat, nil
 	return res, nil
 }
 
-func workForWorker_reg_10(task string, user *User, re *regexp.Regexp, result *DomainStat) error {
+func workForWorkerRegexp(task string, re *regexp.Regexp, result *DomainStat) {
 	if email := re.FindStringSubmatch(task); email != nil {
-		//result.Add(strings.ToLower(email[1]))
-		(*result)[strings.ToLower(email[1])] += 1
+		(*result)[strings.ToLower(email[1])]++
 	}
-
-	return nil
 }
