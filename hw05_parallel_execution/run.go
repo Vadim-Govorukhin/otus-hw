@@ -57,15 +57,9 @@ func Run(tasks []Task, n, m int) error {
 		go func(i int) {
 			defer wg.Done()
 			defer func() { closeTask <- struct{}{} }()
-			for {
-				t, ok := <-task
-				if !ok {
-					fmt.Printf("\t[goroutine %d] end by chanel 'task' \n", i)
-					return
-				}
+			for t := range task {
 				fmt.Printf("[goroutine %d] run task\n", i)
-				err := t()
-				if err != nil {
+				if err := t(); err != nil {
 					errors <- err
 					fmt.Printf("[goroutine %d] send error: %s\n", i, err)
 					if !ignoreErrors {
