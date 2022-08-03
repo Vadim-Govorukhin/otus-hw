@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,15 +12,22 @@ import (
 var testFiles = []struct {
 	fileName string
 	body     interface{}
+	expected EnvValue
 }{
-	{fileName: "NUM", body: 123},
-	{fileName: "STR", body: "string"},
-	{fileName: "NIL", body: "to delete"},
-	{fileName: "NIL", body: nil},
-	{fileName: "STR2", body: "string\nSECON STRING"},
-	{fileName: "STR3", body: "\nSECON STRING"},
-	{fileName: "HELLO", body: "\"hello\""},
-	{fileName: "F.TXT", body: "i am txt"},
+	{fileName: "NUM", body: 123, expected: EnvValue{"123", false}},
+	{fileName: "STR0", body: "", expected: EnvValue{"", false}},
+	{fileName: "STRT", body: "string\t", expected: EnvValue{"string", false}},
+	{fileName: "TSTR", body: "\tstring", expected: EnvValue{"\tstring", false}},
+	{fileName: "STRS", body: "string ", expected: EnvValue{"string", false}},
+	{fileName: "NIL", body: "to delete", expected: EnvValue{"", true}},
+	{fileName: "NIL", body: nil, expected: EnvValue{"", true}},
+	{fileName: "NIL2", body: 0x00, expected: EnvValue{"\n", false}},
+	{fileName: "STR2", body: "string\nSECON STRING", expected: EnvValue{"string", false}},
+	{fileName: "STR3", body: "\nSECON STRING", expected: EnvValue{"", false}},
+	{fileName: "HELLO", body: "\"hello\"", expected: EnvValue{"\"hello\"", false}},
+	{fileName: "F.TXT", body: "i am txt", expected: EnvValue{"i am txt", false}},
+	{fileName: "NotNIL", body: nil, expected: EnvValue{"", true}},
+	{fileName: "NotNIL", body: "not delete", expected: EnvValue{"not delete", false}},
 }
 
 func shouldGetwd(t *testing.T) string {
@@ -58,31 +64,20 @@ func prepareTestDir(t *testing.T, testDirName string) (string, error) {
 }
 
 func setupTest(t *testing.T) {
+	t.Helper()
 	infoLog.Printf("====== start test %s =====\n", t.Name())
 }
+
 func TestReadDir(t *testing.T) {
 	resultTestFiles := make(Environment)
 	for _, testCase := range testFiles {
-		var NeedRemove bool
-		if testCase.body == nil {
-			NeedRemove = true
-		}
-
-		var Value string
-		switch v := testCase.body.(type) {
-		case int:
-			Value = fmt.Sprintf("%d", v)
-		case string:
-			Value = strings.Split(v, "\n")[0]
-		}
-
-		resultTestFiles[testCase.fileName] = EnvValue{Value: Value, NeedRemove: NeedRemove}
+		resultTestFiles[testCase.fileName] = testCase.expected
 	}
 
 	t.Run("preparing test dir", func(t *testing.T) {
 		setupTest(t)
 
-		testDirName := "testDir"
+		const testDirName = "testDir"
 		defer os.RemoveAll(testDirName)
 
 		_, err := prepareTestDir(t, testDirName)
@@ -111,8 +106,8 @@ func TestReadDir(t *testing.T) {
 		testDirPath, _ := prepareTestDir(t, testDirName)
 		defer os.RemoveAll(testDirName)
 
-		Environment, err := ReadDir(testDirPath)
+		environment, err := ReadDir(testDirPath)
 		require.NoError(t, err)
-		require.Equal(t, resultTestFiles, Environment)
+		require.Equal(t, resultTestFiles, environment)
 	})
 }

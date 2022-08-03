@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,12 +11,8 @@ import (
 	"strings"
 )
 
+var infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime) // for info messages
 var ErrUnsupportedFileName = errors.New("unsupported file name")
-
-var (
-	infoLog  = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)                 // for info messages
-	errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile) // for error messages
-)
 
 type Environment map[string]EnvValue
 
@@ -25,23 +22,22 @@ type EnvValue struct {
 	NeedRemove bool
 }
 
+const invalidFileNames = "="
+
 // ReadDir reads a specified directory and returns map of env variables.
 // Variables represented as files where filename is name of variable, file first line is a value.
 func ReadDir(dir string) (Environment, error) {
-	Environment := make(map[string]EnvValue)
+	environment := make(Environment)
 
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		errorLog.Println(err)
-		return nil, err
+		return nil, fmt.Errorf("ioutil.ReadDir error: %w", err)
 	}
 
-	invalidFileNames := "="
 	for _, f := range files {
 		fileName := f.Name()
 		infoLog.Println("Handling file", fileName)
 		if strings.ContainsAny(fileName, invalidFileNames) {
-			errorLog.Println(ErrUnsupportedFileName.Error())
 			return nil, ErrUnsupportedFileName
 		}
 
@@ -52,13 +48,14 @@ func ReadDir(dir string) (Environment, error) {
 
 		buf, err := ioutil.ReadFile(filepath.Join(dir, fileName))
 		if err != nil {
-			errorLog.Println(err)
-			return nil, err
+			return nil, fmt.Errorf("ioutil.ReadFile error: %w", err)
 		}
+		// remove '\t' and ' ' from Value .
 		buf = bytes.Replace(buf, []byte(`0x00`), []byte("\n"), 1) // replace terminal nulls
 		buf = bytes.Split(buf, []byte("\n"))[0]                   // Keep the first line
+		buf = bytes.TrimRight(buf, "\t ")
 
-		Environment[fileName] = EnvValue{Value: string(buf), NeedRemove: NeedRemove}
+		environment[fileName] = EnvValue{Value: string(buf), NeedRemove: NeedRemove}
 	}
-	return Environment, nil
+	return environment, nil
 }
