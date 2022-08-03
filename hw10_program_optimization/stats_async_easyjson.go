@@ -79,8 +79,7 @@ func GetDomainStatEasyjson(r io.Reader, domain string) (DomainStat, error) {
 }
 
 func workForWorkerEasyjson(task []byte, user *User, re *regexp.Regexp, result *DomainStat) error {
-	err := easyjson.Unmarshal(task, user)
-	if err != nil {
+	if err := easyjson.Unmarshal(task, user); err != nil {
 		return err
 	}
 
