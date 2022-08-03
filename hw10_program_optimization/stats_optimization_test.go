@@ -159,8 +159,8 @@ func TestGetDomainStat_Time_And_Memory_Easy(t *testing.T) {
 	t.Logf("memory used: %dMb / %dMb", mem/mb, memoryLimit/mb)
 
 	// Not pass
-	// require.Less(t, int64(result.T), int64(timeLimit), "the program is too slow")
-	// require.Less(t, mem, memoryLimit, "the program is too greedy")
+	require.Less(t, int64(result.T), int64(timeLimit), "the program is too slow")
+	require.Less(t, mem, memoryLimit, "the program is too greedy")
 }
 
 var expectedBizStat = DomainStat{

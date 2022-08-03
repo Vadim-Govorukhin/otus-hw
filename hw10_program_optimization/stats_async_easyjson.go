@@ -13,7 +13,7 @@ import (
 
 func GetDomainStatEasyjson(r io.Reader, domain string) (DomainStat, error) {
 	nWorkers := 10
-	tasks := make(chan string)
+	tasks := make(chan []byte)
 	errors := make(chan error)
 
 	re := regexp.MustCompile("@(?P<Domain>\\w+\\." + domain + ")")
@@ -51,12 +51,16 @@ func GetDomainStatEasyjson(r io.Reader, domain string) (DomainStat, error) {
 		scanner.Split(bufio.ScanLines)
 
 		infoLog.Println("[sender] start sending tasks")
+		var currLine []byte
 		for scanner.Scan() {
 			if err := scanner.Err(); err != nil {
 				errors <- err
 				return
 			}
-			tasks <- scanner.Text()
+			currLine = scanner.Bytes()
+			line := make([]byte, len(currLine))
+			copy(line, currLine)
+			tasks <- line
 		}
 	}()
 
@@ -74,8 +78,9 @@ func GetDomainStatEasyjson(r io.Reader, domain string) (DomainStat, error) {
 	return result, nil
 }
 
-func workForWorkerEasyjson(task string, user *User, re *regexp.Regexp, result *DomainStat) error {
-	if err := easyjson.Unmarshal([]byte(task), user); err != nil {
+func workForWorkerEasyjson(task []byte, user *User, re *regexp.Regexp, result *DomainStat) error {
+	err := easyjson.Unmarshal(task, user)
+	if err != nil {
 		return err
 	}
 

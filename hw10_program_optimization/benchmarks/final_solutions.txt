@@ -14,11 +14,11 @@ BenchmarkStatsZipRegex-4               3         362 459 067 ns/op        20 998
 BenchmarkStatsZipRegex-4               3         374 890 600 ns/op        20 849 162 B/op     223406 allocs/op
 BenchmarkStatsZipRegex-4               4         346 169 575 ns/op        20 704 788 B/op     223381 allocs/op
 BenchmarkStatsZipRegex-4               3         339 543 567 ns/op        20 611 392 B/op     223365 allocs/op
-BenchmarkStatsZipEasy
-BenchmarkStatsZipEasy-4                3         369 813 200 ns/op        41 583 896 B/op     423486 allocs/op
-BenchmarkStatsZipEasy-4                3         369 841 000 ns/op        41 444 781 B/op     423452 allocs/op
-BenchmarkStatsZipEasy-4                3         411 214 567 ns/op        41 678 528 B/op     423484 allocs/op
-BenchmarkStatsZipEasy-4                3         405 761 467 ns/op        41 443 730 B/op     423447 allocs/op
-BenchmarkStatsZipEasy-4                3         421 192 233 ns/op        41 729 408 B/op     423496 allocs/op
+BenchmarkStatsZipEasyjson
+BenchmarkStatsZipEasyjson-4            3         365 752 900 ns/op        24 112 640 B/op     323425 allocs/op
+BenchmarkStatsZipEasyjson-4            3         360 912 767 ns/op        24 162 861 B/op     323433 allocs/op
+BenchmarkStatsZipEasyjson-4            3         342 966 800 ns/op        24 322 866 B/op     323453 allocs/op
+BenchmarkStatsZipEasyjson-4            3         338 512 367 ns/op        24 174 664 B/op     323431 allocs/op
+BenchmarkStatsZipEasyjson-4            3         344 059 567 ns/op        24 272 696 B/op     323441 allocs/op
 PASS
 ok      github.com/Vadim-Govorukhin/otus-hw/hw10_program_optimization   35.904s
