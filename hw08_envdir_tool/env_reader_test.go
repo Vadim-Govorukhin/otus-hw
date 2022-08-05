@@ -28,7 +28,10 @@ var testFiles = []struct {
 	{fileName: "NIL", body: nil, expected: EnvValue{"", true}},
 	{fileName: "NotNIL", body: nil, expected: EnvValue{"", true}},
 	{fileName: "NotNIL", body: "not delete", expected: EnvValue{"not delete", false}},
-	{fileName: "NIL2", body: "   foo0x00with new line", expected: EnvValue{"   foo\nwith new line", false}}, // right?
+	{
+		fileName: "NIL2", body: "   foo" + string(rune(0x00)) + "with new line",
+		expected: EnvValue{"   foo\nwith new line", false},
+	},
 }
 
 func shouldGetwd(t *testing.T) string {
