@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -11,8 +10,10 @@ import (
 	"strings"
 )
 
-var infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime) // for info messages
-var ErrUnsupportedFileName = errors.New("unsupported file name")
+var (
+	infoLog                = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime) // for info messages
+	ErrUnsupportedFileName = errors.New("unsupported file name")
+)
 
 type Environment map[string]EnvValue
 
@@ -58,8 +59,9 @@ func ReadDir(dir string) (Environment, error) {
 }
 
 func getEnvValue(buf []byte) string {
-	buf = bytes.Trim(buf, "\x00")           // replace terminal nulls
-	buf = bytes.Split(buf, []byte("\n"))[0] // Keep the first line
-	buf = bytes.TrimRight(buf, "\t ")
-	return string(buf)
+	s := string(buf)
+	s = strings.ReplaceAll(s, "\x00", "\n") // replace terminal nulls
+	s = strings.Split(s, "\n")[0]           // Keep the first line
+	s = strings.TrimRight(s, "\t ")
+	return s
 }

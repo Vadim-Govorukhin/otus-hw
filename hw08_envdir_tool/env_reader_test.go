@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -74,6 +75,21 @@ func TestReadDir(t *testing.T) {
 		resultExpected[testCase.fileName] = testCase.expected
 	}
 
+	t.Run("Empty dir", func(t *testing.T) {
+		dir, err := ioutil.TempDir("", "prefix")
+		require.NoError(t, err)
+
+		env, err := ReadDir(dir)
+		require.Equal(t, env, Environment{})
+		require.NoError(t, err)
+		defer os.RemoveAll(dir)
+	})
+
+	t.Run("Wrong dir path", func(t *testing.T) {
+		_, err := ReadDir("blabla")
+		require.Error(t, err)
+	})
+
 	t.Run("preparing test dir", func(t *testing.T) {
 		setupTest(t)
 
@@ -113,6 +129,5 @@ func TestReadDir(t *testing.T) {
 			infoLog.Println("check file ", key)
 			require.Equal(t, resultExpected[key], val)
 		}
-
 	})
 }
