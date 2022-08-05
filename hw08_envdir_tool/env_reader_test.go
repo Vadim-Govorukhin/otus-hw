@@ -15,19 +15,19 @@ var testFiles = []struct {
 	expected EnvValue
 }{
 	{fileName: "NUM", body: 123, expected: EnvValue{"123", false}},
-	{fileName: "STR0", body: "", expected: EnvValue{"", false}},
+	{fileName: "STR0", body: "", expected: EnvValue{"", true}},
 	{fileName: "STRT", body: "string\t", expected: EnvValue{"string", false}},
 	{fileName: "TSTR", body: "\tstring", expected: EnvValue{"\tstring", false}},
 	{fileName: "STRS", body: "string ", expected: EnvValue{"string", false}},
-	{fileName: "NIL", body: "to delete", expected: EnvValue{"", true}},
-	{fileName: "NIL", body: nil, expected: EnvValue{"", true}},
-	{fileName: "NIL2", body: 0x00, expected: EnvValue{"\n", false}},
 	{fileName: "STR2", body: "string\nSECON STRING", expected: EnvValue{"string", false}},
 	{fileName: "STR3", body: "\nSECON STRING", expected: EnvValue{"", false}},
 	{fileName: "HELLO", body: "\"hello\"", expected: EnvValue{"\"hello\"", false}},
 	{fileName: "F.TXT", body: "i am txt", expected: EnvValue{"i am txt", false}},
+	{fileName: "NIL", body: "to delete", expected: EnvValue{"", true}},
+	{fileName: "NIL", body: nil, expected: EnvValue{"", true}},
 	{fileName: "NotNIL", body: nil, expected: EnvValue{"", true}},
 	{fileName: "NotNIL", body: "not delete", expected: EnvValue{"not delete", false}},
+	{fileName: "NIL2", body: "\x00", expected: EnvValue{"", false}}, // right?
 }
 
 func shouldGetwd(t *testing.T) string {
@@ -69,9 +69,9 @@ func setupTest(t *testing.T) {
 }
 
 func TestReadDir(t *testing.T) {
-	resultTestFiles := make(Environment)
+	resultExpected := make(Environment)
 	for _, testCase := range testFiles {
-		resultTestFiles[testCase.fileName] = testCase.expected
+		resultExpected[testCase.fileName] = testCase.expected
 	}
 
 	t.Run("preparing test dir", func(t *testing.T) {
@@ -108,6 +108,11 @@ func TestReadDir(t *testing.T) {
 
 		environment, err := ReadDir(testDirPath)
 		require.NoError(t, err)
-		require.Equal(t, resultTestFiles, environment)
+		require.Equal(t, len(resultExpected), len(environment))
+		for key, val := range environment {
+			infoLog.Println("check file ", key)
+			require.Equal(t, resultExpected[key], val)
+		}
+
 	})
 }

@@ -22,12 +22,12 @@ type EnvValue struct {
 	NeedRemove bool
 }
 
-const invalidFileNames = "="
+const invalidFilenameChars = "="
 
 // ReadDir reads a specified directory and returns map of env variables.
 // Variables represented as files where filename is name of variable, file first line is a value.
 func ReadDir(dir string) (Environment, error) {
-	environment := make(Environment)
+	env := make(Environment)
 
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -36,8 +36,8 @@ func ReadDir(dir string) (Environment, error) {
 
 	for _, f := range files {
 		fileName := f.Name()
-		infoLog.Println("Handling file", fileName)
-		if strings.ContainsAny(fileName, invalidFileNames) {
+		infoLog.Println("Handling file: ", fileName)
+		if strings.ContainsAny(fileName, invalidFilenameChars) {
 			return nil, ErrUnsupportedFileName
 		}
 
@@ -50,12 +50,16 @@ func ReadDir(dir string) (Environment, error) {
 		if err != nil {
 			return nil, fmt.Errorf("ioutil.ReadFile error: %w", err)
 		}
-		// remove '\t' and ' ' from Value .
-		buf = bytes.Replace(buf, []byte(`0x00`), []byte("\n"), 1) // replace terminal nulls
-		buf = bytes.Split(buf, []byte("\n"))[0]                   // Keep the first line
-		buf = bytes.TrimRight(buf, "\t ")
 
-		environment[fileName] = EnvValue{Value: string(buf), NeedRemove: NeedRemove}
+		val := getEnvValue(buf)
+		env[fileName] = EnvValue{Value: val, NeedRemove: NeedRemove}
 	}
-	return environment, nil
+	return env, nil
+}
+
+func getEnvValue(buf []byte) string {
+	buf = bytes.Trim(buf, "\x00")           // replace terminal nulls
+	buf = bytes.Split(buf, []byte("\n"))[0] // Keep the first line
+	buf = bytes.TrimRight(buf, "\t ")
+	return string(buf)
 }
