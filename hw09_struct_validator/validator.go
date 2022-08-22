@@ -27,11 +27,11 @@ type ValidationError struct {
 type ValidationErrors []ValidationError
 
 func (v ValidationErrors) Error() string {
-	res := ""
+	var res strings.Builder
 	for _, val := range v {
-		res += fmt.Sprintf("%+v\n", val)
+		res.WriteString(fmt.Sprintf("%+v\n", val))
 	}
-	return res
+	return res.String()
 }
 
 func (v ValidationErrors) Is(tgt error) bool {
