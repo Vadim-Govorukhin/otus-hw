@@ -1,9 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -29,11 +30,15 @@ const invalidFilenameChars = "="
 // Variables represented as files where filename is name of variable, file first line is a value.
 func ReadDir(dir string) (Environment, error) {
 	env := make(Environment)
-
-	files, err := ioutil.ReadDir(dir)
+	d, err := os.Open(dir)
 	if err != nil {
-		return nil, fmt.Errorf("ioutil.ReadDir error: %w", err)
+		return nil, fmt.Errorf("os.Open error: %w", err)
 	}
+	files, err := d.Readdir(-1)
+	if err != nil {
+		return nil, fmt.Errorf("os.File.Readdir error: %w", err)
+	}
+	d.Close()
 
 	for _, f := range files {
 		fileName := f.Name()
@@ -47,9 +52,13 @@ func ReadDir(dir string) (Environment, error) {
 			NeedRemove = true
 		}
 
-		buf, err := ioutil.ReadFile(filepath.Join(dir, fileName))
+		file, err := os.Open(filepath.Join(dir, fileName))
 		if err != nil {
-			return nil, fmt.Errorf("ioutil.ReadFile error: %w", err)
+			return nil, fmt.Errorf("os.Open error: %w", err)
+		}
+		buf, err := bufio.NewReader(file).ReadBytes('\n')
+		if err != nil && !errors.Is(err, io.EOF) {
+			return nil, fmt.Errorf("bufio.ReadBytes error: %w", err)
 		}
 
 		val := getEnvValue(buf)

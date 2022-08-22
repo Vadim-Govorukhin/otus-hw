@@ -14,7 +14,9 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 		return -1
 	}
 	comm := exec.Command(cmd[0], cmd[1:]...) //nolint:gosec
-	comm.Stdin, comm.Stdout, comm.Stderr = os.Stdin, os.Stdout, os.Stderr
+	comm.Stdin = os.Stdin
+	comm.Stdout = os.Stdout
+	comm.Stderr = os.Stderr
 
 	envSl := make([]string, 0, len(env))
 	for key, val := range env {

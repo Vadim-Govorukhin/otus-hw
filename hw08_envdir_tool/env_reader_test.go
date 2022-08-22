@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -34,20 +33,13 @@ var testFiles = []struct {
 	},
 }
 
-func shouldGetwd(t *testing.T) string {
-	t.Helper()
-	curDir, err := os.Getwd()
-	require.NoError(t, err)
-	return curDir
-}
-
 func prepareTestDir(t *testing.T, testDirName string) (string, error) {
 	t.Helper()
-	os.Mkdir(testDirName, 0o750)
-	testDirPath := filepath.Join(shouldGetwd(t), testDirName)
+	dir, err := os.MkdirTemp("", testDirName)
+	require.NoError(t, err)
 
 	for _, testCase := range testFiles {
-		newFile, err := os.Create(filepath.Join(testDirPath, testCase.fileName))
+		newFile, err := os.Create(filepath.Join(dir, testCase.fileName))
 		if err != nil {
 			return "", err
 		}
@@ -64,7 +56,7 @@ func prepareTestDir(t *testing.T, testDirName string) (string, error) {
 		}
 		newFile.Close()
 	}
-	return testDirPath, nil
+	return dir, nil
 }
 
 func setupTest(t *testing.T) {
@@ -79,13 +71,13 @@ func TestReadDir(t *testing.T) {
 	}
 
 	t.Run("Empty dir", func(t *testing.T) {
-		dir, err := ioutil.TempDir("", "prefix")
+		dir, err := os.MkdirTemp("", "prefix")
 		require.NoError(t, err)
+		defer os.RemoveAll(dir)
 
 		env, err := ReadDir(dir)
 		require.Equal(t, env, Environment{})
 		require.NoError(t, err)
-		defer os.RemoveAll(dir)
 	})
 
 	t.Run("Wrong dir path", func(t *testing.T) {
@@ -107,14 +99,14 @@ func TestReadDir(t *testing.T) {
 		setupTest(t)
 
 		testDirName := "testDir"
-		os.Mkdir(testDirName, 0o750)
-		defer os.RemoveAll(testDirName)
+		dir, err := os.MkdirTemp("", testDirName)
+		require.NoError(t, err)
+		defer os.RemoveAll(dir)
 
-		testDirPath := filepath.Join(shouldGetwd(t), testDirName)
-		newFile, _ := os.Create(filepath.Join(testDirPath, "VAR="))
+		newFile, _ := os.Create(filepath.Join(dir, "VAR="))
 		newFile.Close()
 
-		_, err := ReadDir(testDirPath)
+		_, err = ReadDir(dir)
 		require.ErrorIs(t, err, ErrUnsupportedFileName)
 	})
 
