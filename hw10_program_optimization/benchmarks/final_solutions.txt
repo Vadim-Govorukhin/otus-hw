@@ -1,0 +1,24 @@
+goos: windows
+goarch: amd64
+pkg: github.com/Vadim-Govorukhin/otus-hw/hw10_program_optimization
+cpu: Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz
+BenchmarkStatsZip
+BenchmarkStatsZip-4                    3         346 581 033 ns/op         3 310 578 B/op     123233 allocs/op
+BenchmarkStatsZip-4                    3         345 288 867 ns/op         3 285 528 B/op     123228 allocs/op
+BenchmarkStatsZip-4                    3         367 130 067 ns/op         3 297 853 B/op     123229 allocs/op
+BenchmarkStatsZip-4                    3         354 109 167 ns/op         3 310 232 B/op     123231 allocs/op
+BenchmarkStatsZip-4                    3         419 045 500 ns/op         3 298 210 B/op     123231 allocs/op
+BenchmarkStatsZipRegex
+BenchmarkStatsZipRegex-4               3         387 595 333 ns/op        20 762 725 B/op     223396 allocs/op
+BenchmarkStatsZipRegex-4               3         362 459 067 ns/op        20 998 157 B/op     223429 allocs/op
+BenchmarkStatsZipRegex-4               3         374 890 600 ns/op        20 849 162 B/op     223406 allocs/op
+BenchmarkStatsZipRegex-4               4         346 169 575 ns/op        20 704 788 B/op     223381 allocs/op
+BenchmarkStatsZipRegex-4               3         339 543 567 ns/op        20 611 392 B/op     223365 allocs/op
+BenchmarkStatsZipEasyjson
+BenchmarkStatsZipEasyjson-4            3         365 752 900 ns/op        24 112 640 B/op     323425 allocs/op
+BenchmarkStatsZipEasyjson-4            3         360 912 767 ns/op        24 162 861 B/op     323433 allocs/op
+BenchmarkStatsZipEasyjson-4            3         342 966 800 ns/op        24 322 866 B/op     323453 allocs/op
+BenchmarkStatsZipEasyjson-4            3         338 512 367 ns/op        24 174 664 B/op     323431 allocs/op
+BenchmarkStatsZipEasyjson-4            3         344 059 567 ns/op        24 272 696 B/op     323441 allocs/op
+PASS
+ok      github.com/Vadim-Govorukhin/otus-hw/hw10_program_optimization   35.904s

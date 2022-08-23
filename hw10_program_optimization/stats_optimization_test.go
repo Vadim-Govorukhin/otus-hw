@@ -1,9 +1,11 @@
+//go:build bench
 // +build bench
 
 package hw10programoptimization
 
 import (
 	"archive/zip"
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -17,8 +19,58 @@ const (
 	timeLimit = 300 * time.Millisecond
 )
 
+// go test -benchmem -v -run=^$ -tags bench -timeout=30s -count=5 -bench .
+func BenchmarkStatsZip(b *testing.B) {
+	infoLog.SetOutput(ioutil.Discard)
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		r, _ := zip.OpenReader("testdata/users.dat.zip")
+		defer r.Close()
+
+		data, _ := r.File[0].Open()
+
+		b.StartTimer()
+		GetDomainStat(data, "biz")
+		b.StopTimer()
+	}
+}
+
+func BenchmarkStatsZipRegexp(b *testing.B) {
+	infoLog.SetOutput(ioutil.Discard)
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		r, _ := zip.OpenReader("testdata/users.dat.zip")
+		defer r.Close()
+
+		data, _ := r.File[0].Open()
+
+		b.StartTimer()
+		GetDomainStatRegexp(data, "biz")
+		b.StopTimer()
+	}
+}
+
+func BenchmarkStatsZipEasyjson(b *testing.B) {
+	infoLog.SetOutput(ioutil.Discard)
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+
+		r, _ := zip.OpenReader("testdata/users.dat.zip")
+		defer r.Close()
+
+		data, _ := r.File[0].Open()
+
+		b.StartTimer()
+		GetDomainStatEasyjson(data, "biz")
+		b.StopTimer()
+	}
+}
+
 // go test -v -count=1 -timeout=30s -tags bench .
 func TestGetDomainStat_Time_And_Memory(t *testing.T) {
+	infoLog.SetOutput(ioutil.Discard)
 	bench := func(b *testing.B) {
 		b.Helper()
 		b.StopTimer()
@@ -36,7 +88,6 @@ func TestGetDomainStat_Time_And_Memory(t *testing.T) {
 		stat, err := GetDomainStat(data, "biz")
 		b.StopTimer()
 		require.NoError(t, err)
-
 		require.Equal(t, expectedBizStat, stat)
 	}
 
@@ -45,6 +96,69 @@ func TestGetDomainStat_Time_And_Memory(t *testing.T) {
 	t.Logf("time used: %s / %s", result.T, timeLimit)
 	t.Logf("memory used: %dMb / %dMb", mem/mb, memoryLimit/mb)
 
+	require.Less(t, int64(result.T), int64(timeLimit), "the program is too slow")
+	require.Less(t, mem, memoryLimit, "the program is too greedy")
+}
+
+func TestGetDomainStat_Time_And_Memory_Regexp(t *testing.T) {
+	infoLog.SetOutput(ioutil.Discard)
+	bench := func(b *testing.B) {
+		b.Helper()
+		b.StopTimer()
+
+		r, err := zip.OpenReader("testdata/users.dat.zip")
+		require.NoError(t, err)
+		defer r.Close()
+
+		require.Equal(t, 1, len(r.File))
+
+		data, err := r.File[0].Open()
+		require.NoError(t, err)
+
+		b.StartTimer()
+		stat, err := GetDomainStatRegexp(data, "biz")
+		b.StopTimer()
+		require.NoError(t, err)
+		require.Equal(t, expectedBizStat, stat)
+	}
+
+	result := testing.Benchmark(bench)
+	mem := result.MemBytes
+	t.Logf("time used: %s / %s", result.T, timeLimit)
+	t.Logf("memory used: %dMb / %dMb", mem/mb, memoryLimit/mb)
+
+	require.Less(t, int64(result.T), int64(timeLimit), "the program is too slow")
+	require.Less(t, mem, memoryLimit, "the program is too greedy")
+}
+
+func TestGetDomainStat_Time_And_Memory_Easy(t *testing.T) {
+	infoLog.SetOutput(ioutil.Discard)
+	bench := func(b *testing.B) {
+		b.Helper()
+		b.StopTimer()
+
+		r, err := zip.OpenReader("testdata/users.dat.zip")
+		require.NoError(t, err)
+		defer r.Close()
+
+		require.Equal(t, 1, len(r.File))
+
+		data, err := r.File[0].Open()
+		require.NoError(t, err)
+
+		b.StartTimer()
+		stat, err := GetDomainStatEasyjson(data, "biz")
+		b.StopTimer()
+		require.NoError(t, err)
+		require.Equal(t, expectedBizStat, stat)
+	}
+
+	result := testing.Benchmark(bench)
+	mem := result.MemBytes
+	t.Logf("time used: %s / %s", result.T, timeLimit)
+	t.Logf("memory used: %dMb / %dMb", mem/mb, memoryLimit/mb)
+
+	// Not pass
 	require.Less(t, int64(result.T), int64(timeLimit), "the program is too slow")
 	require.Less(t, mem, memoryLimit, "the program is too greedy")
 }
