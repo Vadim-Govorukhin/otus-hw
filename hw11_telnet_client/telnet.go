@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -28,7 +30,6 @@ func NewTelnetClient(address string, timeout time.Duration, in io.ReadCloser, ou
 
 func (c *Client) Connect() (err error) {
 	c.conn, err = net.DialTimeout("tcp", c.address, c.timeout)
-	log.Printf("...Connected to %s\n", c.address)
 	return err
 }
 
@@ -39,12 +40,26 @@ func (c *Client) Close() (err error) {
 }
 
 func (c *Client) Receive() (err error) {
-	//_, err = c.in.Read("\n")
+	for {
+		data, err := bufio.NewReader(c.conn).ReadString('\n')
+		log.Println("[cl] receive ", data)
+		if err != nil {
+			break
+		}
+		c.out.Write([]byte(data))
+	}
 	return
 }
 
 func (c *Client) Send() (err error) {
-	_, err = c.out.Write([]byte("Received"))
+	for {
+		data, err := bufio.NewReader(c.in).ReadString('\n')
+		fmt.Fprint(c.conn, data)
+		log.Println("[cl] send ", data)
+		if err != nil {
+			break
+		}
+	}
 	return
 }
 

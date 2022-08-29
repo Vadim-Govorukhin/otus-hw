@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -15,16 +16,40 @@ func main() {
 
 	arguments := os.Args
 	if len(arguments) != 3 {
-		log.Printf("Usage: %s host port ", os.Args[0])
+		log.Printf("Usage: %s host port", arguments[0])
 		os.Exit(1)
 	}
-
-	HOST := arguments[1]
-	PORT := arguments[2]
-	address := net.JoinHostPort(HOST, PORT)
+	address := net.JoinHostPort(arguments[1], arguments[2])
 
 	t := NewTelnetClient(address, timeout, os.Stdin, os.Stdout)
-	t.Connect()
+	err := t.Connect()
+	if err != nil {
+		log.Println("Connection error: ", err)
+		return
+	}
+	log.Printf("...Connected to %s\n", address)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		err := t.Send()
+		if err != nil {
+			log.Println("[sender] error: ", err)
+			return
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		err := t.Receive()
+		if err != nil {
+			log.Println("[receiver] error: ", err)
+			return
+		}
+	}()
+
+	wg.Wait()
+	t.Close()
 
 	// Place your code here,
 	// P.S. Do not rush to throw context down, think think if it is useful with blocking operation?
