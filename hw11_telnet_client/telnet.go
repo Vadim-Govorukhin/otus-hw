@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"log"
 	"net"
 	"time"
 )
@@ -13,7 +14,7 @@ type TelnetClient interface {
 	Receive() error
 }
 
-type Telnet struct {
+type Client struct {
 	conn    net.Conn
 	address string
 	timeout time.Duration
@@ -22,26 +23,28 @@ type Telnet struct {
 }
 
 func NewTelnetClient(address string, timeout time.Duration, in io.ReadCloser, out io.Writer) TelnetClient {
-	return Telnet{nil, address, timeout, in, out}
+	return &Client{nil, address, timeout, in, out}
 }
 
-func (t Telnet) Connect() (err error) {
-	t.conn, err = net.DialTimeout("tcp", t.address, t.timeout)
+func (c *Client) Connect() (err error) {
+	c.conn, err = net.DialTimeout("tcp", c.address, c.timeout)
+	log.Printf("...Connected to %s\n", c.address)
 	return err
 }
 
-func (t Telnet) Close() (err error) {
-	err = t.conn.Close()
+func (c *Client) Close() (err error) {
+	err = c.conn.Close()
+	log.Println("...Connection was closed by")
 	return
 }
 
-func (t Telnet) Receive() (err error) {
-	//_, err = t.in.Read("\n")
+func (c *Client) Receive() (err error) {
+	//_, err = c.in.Read("\n")
 	return
 }
 
-func (t Telnet) Send() (err error) {
-	_, err = t.out.Write([]byte("Received"))
+func (c *Client) Send() (err error) {
+	_, err = c.out.Write([]byte("Received"))
 	return
 }
 
