@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"time"
 )
 
@@ -35,18 +36,22 @@ func (c *Client) Connect() (err error) {
 
 func (c *Client) Close() (err error) {
 	err = c.conn.Close()
-	log.Println("...Connection was closed by")
+	fmt.Fprintln(os.Stderr, "...Connection was closed by peer")
 	return
 }
 
 func (c *Client) Receive() (err error) {
 	for {
 		data, err := bufio.NewReader(c.conn).ReadString('\n')
-		log.Println("[cl] receive ", data)
+		log.Printf("[cl] receive '%s'\n", data)
+
 		if err != nil {
 			break
 		}
-		c.out.Write([]byte(data))
+		_, err = c.out.Write([]byte(data))
+		if err != nil {
+			break
+		}
 	}
 	return
 }
@@ -54,11 +59,20 @@ func (c *Client) Receive() (err error) {
 func (c *Client) Send() (err error) {
 	for {
 		data, err := bufio.NewReader(c.in).ReadString('\n')
-		fmt.Fprint(c.conn, data)
-		log.Println("[cl] send ", data)
+		log.Printf("[cl] read %#v with error %e\n", data, err)
+		log.Printf("[cl] compare %#v with %#v\n", data, `\x04\r\n`)
+		if data == `\x04\r\n` {
+			err = io.EOF
+		}
+		if err != nil {
+			log.Printf("[cl] return with error %e\n", err)
+			break
+		}
+		_, err = fmt.Fprint(c.conn, data)
 		if err != nil {
 			break
 		}
+		log.Printf("[cl] send %#v with error %e\n", data, err)
 	}
 	return
 }

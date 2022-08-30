@@ -2,24 +2,28 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 )
 
+var timeout time.Duration
+
 func main() {
-	var timeout time.Duration
-	flag.DurationVar(&timeout, "timeout", 10*time.Second, "timeout of connection")
+	flag.DurationVar(&timeout, "timeout", 10*time.Second, "connection timeout")
 	flag.Parse()
 
 	arguments := os.Args
-	if len(arguments) != 3 {
-		log.Printf("Usage: %s host port", arguments[0])
+	if len(arguments) != 4 {
+		log.Printf("Usage: %s [--timeout] host port", arguments[0])
 		os.Exit(1)
 	}
-	address := net.JoinHostPort(arguments[1], arguments[2])
+	address := net.JoinHostPort(arguments[len(arguments)-2], arguments[len(arguments)-1])
 
 	t := NewTelnetClient(address, timeout, os.Stdin, os.Stdout)
 	err := t.Connect()
@@ -27,7 +31,10 @@ func main() {
 		log.Println("Connection error: ", err)
 		return
 	}
-	log.Printf("...Connected to %s\n", address)
+
+	fmt.Fprintf(os.Stderr, "...Connected to %s with timeout %s\n", address, timeout)
+	gracefulShutdown := make(chan os.Signal, 1) //////
+	signal.Notify(gracefulShutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -49,6 +56,7 @@ func main() {
 	}()
 
 	wg.Wait()
+	log.Println("Close client")
 	t.Close()
 
 	// Place your code here,
