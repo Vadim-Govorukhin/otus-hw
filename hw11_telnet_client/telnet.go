@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -35,46 +34,27 @@ func (c *Client) Connect() (err error) {
 }
 
 func (c *Client) Close() (err error) {
+	err = c.in.Close()
+	if err != nil {
+		log.Printf("error while closing 'in' %e", err)
+	}
+
 	err = c.conn.Close()
+	if err != nil {
+		log.Printf("error while closing connection %e", err)
+	}
 	fmt.Fprintln(os.Stderr, "...Connection was closed by peer")
 	return
 }
 
-func (c *Client) Receive() (err error) {
-	for {
-		data, err := bufio.NewReader(c.conn).ReadString('\n')
-		log.Printf("[cl] receive '%s'\n", data)
-
-		if err != nil {
-			break
-		}
-		_, err = c.out.Write([]byte(data))
-		if err != nil {
-			break
-		}
-	}
-	return
+func (c *Client) Receive() error {
+	_, err := io.Copy(c.out, c.conn)
+	return err
 }
 
-func (c *Client) Send() (err error) {
-	for {
-		data, err := bufio.NewReader(c.in).ReadString('\n')
-		log.Printf("[cl] read %#v with error %e\n", data, err)
-		log.Printf("[cl] compare %#v with %#v\n", data, `\x04\r\n`)
-		if data == `\x04\r\n` {
-			err = io.EOF
-		}
-		if err != nil {
-			log.Printf("[cl] return with error %e\n", err)
-			break
-		}
-		_, err = fmt.Fprint(c.conn, data)
-		if err != nil {
-			break
-		}
-		log.Printf("[cl] send %#v with error %e\n", data, err)
-	}
-	return
+func (c *Client) Send() error {
+	_, err := io.Copy(c.conn, c.in)
+	return err
 }
 
 // Place your code here.
