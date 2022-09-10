@@ -1,12 +1,18 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
 	"time"
+)
+
+var (
+	ErrConnectionEmpty  = errors.New("error while establishing connection")
+	ErrClosedConnection = errors.New("try to close closed connection")
 )
 
 type TelnetClient interface {
@@ -30,18 +36,26 @@ func NewTelnetClient(address string, timeout time.Duration, in io.ReadCloser, ou
 
 func (c *Client) Connect() (err error) {
 	c.conn, err = net.DialTimeout("tcp", c.address, c.timeout)
+	if c.conn == nil {
+		return ErrConnectionEmpty
+	}
 	return err
 }
 
 func (c *Client) Close() (err error) {
 	err = c.in.Close()
 	if err != nil {
-		log.Printf("error while closing 'in' %e", err)
+		log.Printf("error while closing input stream %e", err)
+		return ErrClosedConnection
 	}
 
+	if c.conn == nil {
+		return ErrConnectionEmpty
+	}
 	err = c.conn.Close()
 	if err != nil {
 		log.Printf("error while closing connection %e", err)
+		return ErrClosedConnection
 	}
 	fmt.Fprintln(os.Stderr, "...Connection was closed by peer")
 	return
@@ -56,6 +70,3 @@ func (c *Client) Send() error {
 	_, err := io.Copy(c.conn, c.in)
 	return err
 }
-
-// Place your code here.
-// P.S. Author's solution takes no more than 50 lines.

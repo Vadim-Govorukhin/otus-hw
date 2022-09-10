@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-const argslen = 4
-
 var timeout time.Duration
 
 func main() {
@@ -20,8 +18,9 @@ func main() {
 	flag.Parse()
 
 	arguments := os.Args
-	if len(arguments) != argslen {
-		log.Printf("Usage: %s [--timeout] host port", arguments[0])
+	argslen := len(arguments)
+	if (argslen < 3) || (argslen > 4) {
+		log.Printf("Usage of my TELNET client: [--timeout] host port\n got arguments %v", arguments[1:])
 		os.Exit(1)
 	}
 	address := net.JoinHostPort(arguments[argslen-2], arguments[argslen-1])
@@ -29,20 +28,14 @@ func main() {
 	client := NewTelnetClient(address, timeout, os.Stdin, os.Stdout)
 	err := client.Connect()
 	if err != nil {
-		log.Println("Connection error: ", err)
-		return
+		log.Panicf("Connection error: %e", err)
 	}
-
+	defer client.Close()
 	fmt.Fprintf(os.Stderr, "...Connected to %s with timeout %s\n", address, timeout)
-	//ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGQUIT, os.Interrupt)
+
 	errorCh := make(chan error, 2)
 	gracefulShoutdown := make(chan os.Signal, 1)
 	signal.Notify(gracefulShoutdown, syscall.SIGINT, syscall.SIGQUIT, os.Interrupt)
-
-	defer func() {
-		log.Println("Close client")
-		client.Close()
-	}()
 
 	go func() {
 		errorCh <- client.Send()
@@ -57,16 +50,12 @@ func main() {
 		select {
 		case err := <-errorCh:
 			if err != nil {
-				log.Printf("got error %#v", err)
-				return
+				log.Panicf("got error %#v", err)
 			}
-
+			fmt.Fprintf(os.Stderr, "...EOF\n")
 			return
 		case <-gracefulShoutdown:
 			return
 		}
 	}
-
-	// Place your code here,
-	// P.S. Do not rush to throw context down, think think if it is useful with blocking operation?
 }
