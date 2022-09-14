@@ -25,6 +25,9 @@ version: build
 test:
 	go test -race ./internal/... ./pkg/...
 
+go_run:
+	go run ./cmd/calendar/. -config ./configs/config.toml
+
 install-lint-deps:
 	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.41.1
 

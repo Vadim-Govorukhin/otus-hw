@@ -1,3 +1,6 @@
+bind_addr = ":8080"
+store = "memory"
+
 [logger]
 level = "INFO"
 
