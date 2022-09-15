@@ -6,11 +6,14 @@ import (
 )
 
 var (
-	ErrorDayBusy = errors.New("данное время уже занято другим событием")
+	ErrorDayBusy     = errors.New("Данное время уже занято другим событием")
+	ErrorEventIDBusy = errors.New("Событие с таким id уже существует")
 	// TODO
 )
 
 type EventID string
+
+type ListEvents []Event
 
 type Event struct {
 	ID             EventID       // Уникальный идентификатор события
@@ -23,10 +26,12 @@ type Event struct {
 }
 
 type EventStorage interface {
-	Create(Event)                // добавление события в хранилище;
-	Update(EventID, Event)       // изменение события в хранилище;
-	Delete(EventID)              // удаление события из хранилища;
-	ListEventsByDay(time.Time)   // листинг событий на день
-	ListEventsByWeek(time.Time)  // листинг событий на неделю
-	ListEventsByMonth(time.Time) // листинг событий на день
+	Create(Event) error                     // Добавление события в хранилище
+	Update(EventID, Event)                  // Изменение события в хранилище
+	Delete(EventID)                         // Удаление события из хранилища
+	ListEventsByDay(time.Time) ListEvents   // Листинг событий на день
+	ListEventsByWeek(time.Time) ListEvents  // Листинг событий на неделю
+	ListEventsByMonth(time.Time) ListEvents // Листинг событий на день
+	ListAllEvents() ListEvents              // Листинг всех событий
+	ListUserEvents(string) ListEvents       // Листинг всех событий юзера
 }

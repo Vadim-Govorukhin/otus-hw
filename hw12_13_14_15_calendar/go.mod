@@ -2,4 +2,7 @@ module github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar
 
 go 1.16
 
-require github.com/BurntSushi/toml v1.2.0
+require (
+	github.com/BurntSushi/toml v1.2.0
+	github.com/stretchr/testify v1.8.0
+)
