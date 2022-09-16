@@ -6,12 +6,14 @@ import (
 )
 
 var (
-	ErrorDayBusy     = errors.New("Данное время уже занято другим событием")
-	ErrorEventIDBusy = errors.New("Событие с таким id уже существует")
+	ErrorDayBusy       = errors.New("данное время уже занято другим событием")
+	ErrorEventIDBusy   = errors.New("cобытие с таким id уже существует")
+	ErrorWrongUpdateID = errors.New("обновление события с изменением ID")
 	// TODO
 )
 
 type EventID string
+type UserID string
 
 type ListEvents []Event
 
@@ -21,17 +23,24 @@ type Event struct {
 	Date           time.Time     // Дата и время события;
 	EndDate        time.Time     // дата и время окончания события;
 	Description    string        // Описание события - длинный текст, опционально
-	UserID         string        // ID пользователя, владельца события;
+	UserID         UserID        // ID пользователя, владельца события;
 	NotifyUserTime time.Duration // За сколько времени высылать уведомление, опционально
 }
 
 type EventStorage interface {
 	Create(Event) error                     // Добавление события в хранилище
-	Update(EventID, Event)                  // Изменение события в хранилище
+	Update(EventID, Event) error            // Изменение события в хранилище
 	Delete(EventID)                         // Удаление события из хранилища
 	ListEventsByDay(time.Time) ListEvents   // Листинг событий на день
 	ListEventsByWeek(time.Time) ListEvents  // Листинг событий на неделю
 	ListEventsByMonth(time.Time) ListEvents // Листинг событий на день
 	ListAllEvents() ListEvents              // Листинг всех событий
-	ListUserEvents(string) ListEvents       // Листинг всех событий юзера
+	ListUserEvents(UserID) ListEvents       // Листинг всех событий юзера
+}
+
+type Notification struct {
+	EventID EventID   // ID события
+	Title   string    //Заголовок события
+	Date    time.Time // Дата события
+	User    UserID    // Пользователь, которому отправлять
 }

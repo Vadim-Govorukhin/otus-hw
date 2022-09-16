@@ -22,20 +22,24 @@ func New() *Storage {
 func (s *Storage) Create(e storage.Event) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	fmt.Printf("Добавляем событие с id=%s\n", e.ID)
 	if _, ok := s.db[e.ID]; ok {
-		fmt.Printf("Не удалось добавить событие с id=%s\n", e.ID)
+		fmt.Printf("Не удалось добавить событие с ID=%s\n", e.ID)
 		return storage.ErrorEventIDBusy
 	}
 	s.db[e.ID] = e
 	return
 }
 
-func (s *Storage) Update(eid storage.EventID, e storage.Event) {
+func (s *Storage) Update(eid storage.EventID, e storage.Event) (err error) {
 	s.mu.Lock()
-	delete(s.db, eid) //
+	defer s.mu.Unlock()
+	if eid != e.ID {
+		fmt.Printf("Нельзя обновить событие с ID %s на событие с ID %s\n", eid, e.ID)
+		return storage.ErrorWrongUpdateID
+	}
 	s.db[eid] = e
-	e.ID = eid
-	s.mu.Unlock()
+	return
 }
 
 func (s *Storage) Delete(eid storage.EventID) {
@@ -59,10 +63,12 @@ func (s *Storage) ListEventsByDay(choosenDay time.Time) storage.ListEvents {
 
 func (s *Storage) ListEventsByWeek(choosenWeek time.Time) storage.ListEvents {
 	listEvents := make(storage.ListEvents, 0) //
-	week := choosenWeek.Weekday()
+	year, week := choosenWeek.ISOWeek()
 	s.mu.RLock()
+	var vWeek, vYear int
 	for _, val := range s.db {
-		if val.Date.Weekday() == week {
+		vYear, vWeek = val.Date.ISOWeek()
+		if (vWeek == week) && (vYear == year) {
 			listEvents = append(listEvents, val)
 		}
 	}
@@ -93,7 +99,7 @@ func (s *Storage) ListAllEvents() storage.ListEvents {
 	return listEvents
 }
 
-func (s *Storage) ListUserEvents(userID string) storage.ListEvents {
+func (s *Storage) ListUserEvents(userID storage.UserID) storage.ListEvents {
 	listEvents := make(storage.ListEvents, 0) //
 	s.mu.RLock()
 	for _, val := range s.db {
