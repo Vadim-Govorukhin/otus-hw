@@ -2,16 +2,18 @@ package sqlstorage
 
 import (
 	"context"
-	"database/sql"
+	"fmt"
 	"time"
 
 	_ "github.com/jackc/pgx/stdlib"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage"
 )
 
 type Storage struct { // TODO
-	db *sql.DB
+	db          *sqlx.DB
+	databaseURL string
 }
 
 func New() *Storage {
@@ -19,7 +21,18 @@ func New() *Storage {
 }
 
 func (s *Storage) Connect(ctx context.Context) error {
-	// TODO
+	db, err := sqlx.Open("pgx", s.databaseURL)
+
+	if err != nil {
+		fmt.Printf("failed to load driver: %v", err)
+		return storage.ErrorLoadDriver
+	}
+
+	if err := db.PingContext(ctx); err != nil {
+		fmt.Printf("failed to connect to db: %v", err)
+		return storage.ErrorConnectDB
+	}
+	s.db = db
 	return nil
 }
 
@@ -29,6 +42,9 @@ func (s *Storage) Close(ctx context.Context) error {
 }
 
 func (s *Storage) Create(storage.Event) error {
+	//query := `insert into events(owner, title, descr, start_date, end_date, )
+	//		values($1, $2, $3, $4, $5)`
+
 	return nil
 }
 

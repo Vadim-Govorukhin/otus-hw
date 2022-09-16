@@ -1,15 +1,7 @@
 package storage
 
 import (
-	"errors"
 	"time"
-)
-
-var (
-	ErrorDayBusy       = errors.New("данное время уже занято другим событием")
-	ErrorEventIDBusy   = errors.New("cобытие с таким id уже существует")
-	ErrorWrongUpdateID = errors.New("обновление события с изменением ID")
-	// TODO
 )
 
 type EventID string
