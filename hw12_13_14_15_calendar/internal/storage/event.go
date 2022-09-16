@@ -10,13 +10,13 @@ type UserID string
 type ListEvents []Event
 
 type Event struct {
-	ID             EventID       // Уникальный идентификатор события
-	Title          string        // Заголовок - коротий текст
-	Date           time.Time     // Дата и время события;
-	EndDate        time.Time     // дата и время окончания события;
-	Description    string        // Описание события - длинный текст, опционально
-	UserID         UserID        // ID пользователя, владельца события;
-	NotifyUserTime time.Duration // За сколько времени высылать уведомление, опционально
+	ID             EventID       `db:"event_id"`         // Уникальный идентификатор события
+	Title          string        `db:"title"`            // Заголовок - коротий текст
+	StartDate      time.Time     `db:"start_date"`       // Дата и время события;
+	EndDate        time.Time     `db:"end_date"`         // дата и время окончания события;
+	Description    string        `db:"descr"`            // Описание события - длинный текст, опционально
+	UserID         UserID        `db:"user_id"`          // ID пользователя, владельца события;
+	NotifyUserTime time.Duration `db:"notify_user_time"` // За сколько времени высылать уведомление, опционально
 }
 
 type EventStorage interface {

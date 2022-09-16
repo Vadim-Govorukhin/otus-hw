@@ -15,7 +15,7 @@ var (
 	testEvent = storage.Event{
 		ID:             storage.EventID("0"),
 		Title:          "Test0",
-		Date:           time.Date(2022, time.September, 15, 1, 2, 3, 0, time.UTC),
+		StartDate:      time.Date(2022, time.September, 15, 1, 2, 3, 0, time.UTC),
 		EndDate:        time.Date(2022, time.December, 15, 1, 2, 3, 0, time.UTC),
 		Description:    "A Testing Event0",
 		UserID:         storage.UserID("user0"),
@@ -24,7 +24,7 @@ var (
 	testEvent2 = storage.Event{
 		ID:             storage.EventID("1"),
 		Title:          "Test1",
-		Date:           time.Date(2022, time.September, 16, 1, 2, 3, 0, time.UTC),
+		StartDate:      time.Date(2022, time.September, 16, 1, 2, 3, 0, time.UTC),
 		EndDate:        time.Date(2022, time.December, 15, 1, 2, 3, 0, time.UTC),
 		Description:    "A Testing Event1",
 		UserID:         storage.UserID("user1"),
@@ -33,7 +33,7 @@ var (
 	testEvent3 = storage.Event{
 		ID:             storage.EventID("2"),
 		Title:          "Test2",
-		Date:           time.Date(2022, time.November, 16, 1, 2, 3, 0, time.UTC),
+		StartDate:      time.Date(2022, time.November, 16, 1, 2, 3, 0, time.UTC),
 		EndDate:        time.Date(2022, time.December, 15, 1, 2, 3, 0, time.UTC),
 		Description:    "A Testing Event2",
 		UserID:         storage.UserID("user0"),

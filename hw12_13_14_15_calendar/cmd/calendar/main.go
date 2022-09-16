@@ -9,8 +9,10 @@ import (
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/logger"
+	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage"
+	memorystorage "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage/memory"
+	sqlstorage "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage/sql"
 	// internalhttp "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/server/http"
-	// memorystorage "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage/memory"
 )
 
 var configFile string
@@ -37,6 +39,19 @@ func main() {
 	logg := logger.New(conf.Logger.Level)
 	fmt.Printf("Create logger: %+v\n", logg)
 
+	///
+	storeConf := storage.New(*conf.Storage)
+	fmt.Printf("Create storage config: %+v\n", storeConf)
+
+	var store storage.EventStorage
+	switch conf.Storage.Store {
+	case "memory":
+		store = memorystorage.New()
+	case "sql":
+		store = sqlstorage.New(storeConf)
+	}
+	///
+	var _ = store
 	//storage := memorystorage.New()
 	/*
 		calendar := app.New(logg, storage)

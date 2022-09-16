@@ -1,17 +1,21 @@
 package config
 
 type Config struct {
-	BindAddr    string     `toml:"bind_addr"`    // Адрес (порт), на котором запускаем веб сервер
-	Store       string     `toml:"store"`        // Тип хранилища "memory" или "sql"
-	DatabaseURL string     `toml:"database_url"` // Адрес базы данных
-	SessionKey  string     `toml:"session_key"`  // Ключ для генерации сессий
-	Logger      LoggerConf // Логирование
+	Storage    *StorageConf
+	Logger     *LoggerConf // Логирование
+	SessionKey string      `toml:"session_key"` // Ключ для генерации сессий
+	BindAddr   string      `toml:"bind_addr"`   // Адрес (порт), на котором запускаем веб сервер
 	// TODO
 }
 
 type LoggerConf struct {
 	Level string `toml:"level"` // Уровень логирования
 	// TODO
+}
+
+type StorageConf struct {
+	Store       string `toml:"store"`        // Тип хранилища "memory" или "sql"
+	DatabaseURL string `toml:"database_url"` // Адрес базы данных
 }
 
 func NewConfig() *Config {

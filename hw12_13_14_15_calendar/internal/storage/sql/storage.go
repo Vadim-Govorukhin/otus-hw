@@ -11,17 +11,26 @@ import (
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage"
 )
 
-type Storage struct { // TODO
-	db          *sqlx.DB
-	databaseURL string
+var Queries = map[string]string{
+	"insert": `INSERT INTO events(event_id, title, start_date, end_date, descr, user_id, notify_user_time)
+				values(:event_id, :title, :start_date, :end_date, :descr, :user_id, :notify_user_time);`,
+	"select_day": `SELECT * FROM events WHERE DAY(start_date) = :start_date`,
 }
 
-func New() *Storage {
-	return &Storage{}
+type Storage struct { // TODO
+	config        *storage.Storage
+	db            *sqlx.DB
+	preparedQuery map[string]*sqlx.NamedStmt
+}
+
+func New(config *storage.Storage) *Storage {
+	return &Storage{
+		config:        config,
+		preparedQuery: make(map[string]*sqlx.NamedStmt)}
 }
 
 func (s *Storage) Connect(ctx context.Context) error {
-	db, err := sqlx.Open("pgx", s.databaseURL)
+	db, err := sqlx.Open("pgx", s.config.DatabaseURL)
 
 	if err != nil {
 		fmt.Printf("failed to load driver: %v", err)
@@ -36,42 +45,93 @@ func (s *Storage) Connect(ctx context.Context) error {
 	return nil
 }
 
-func (s *Storage) Close(ctx context.Context) error {
+func (s *Storage) PreparedQueries(ctx context.Context) error {
+	// создаем подготовленный запрос
+	for key, val := range Queries {
+		stmt, err := s.db.PrepareNamed(val) // *sqlx.NamedStmt
+		if err != nil {
+			fmt.Printf("failed to prepare %s query '%v'\n error: %v", key, val, err)
+			return err
+		}
+		s.preparedQuery[key] = stmt
+	}
+	return nil
+}
+
+func (s *Storage) Close(ctx context.Context) {
+	var err error
+	for key, val := range s.preparedQuery {
+		err = val.Close()
+		if err != nil {
+			fmt.Printf("failed to close prepared '%s' statement with err: %v", key, err)
+		}
+	}
+	err = s.db.Close()
+	if err != nil {
+		fmt.Printf("failed to close db with err: %v", err)
+	}
+}
+
+func (s *Storage) Create(e storage.Event) error {
+	_, err := s.preparedQuery["insert"].Exec(e)
+	if err != nil {
+		fmt.Printf("failed to insert event %#v to db: error %v", e, err)
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) Update(eid storage.EventID, e storage.Event) error {
 	// TODO
 	return nil
 }
 
-func (s *Storage) Create(storage.Event) error {
-	//query := `insert into events(owner, title, descr, start_date, end_date, )
-	//		values($1, $2, $3, $4, $5)`
+func (s *Storage) Delete(eid storage.EventID) {
+	// TODO
+}
 
+func (s *Storage) ListEventsByDay(choosenDay time.Time) storage.ListEvents {
+	listEvents := make(storage.ListEvents, 0) //
+	rows, err := s.preparedQuery["select_day"].Queryx(choosenDay.Day())
+	if err != nil {
+		fmt.Printf("failed to select events by day %v: error %v", choosenDay.Day(), err)
+		return nil
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tmp storage.Event
+		if err := rows.Scan(&tmp); err != nil {
+			// ошибка сканирования
+			return nil
+		}
+		// обрабатываем строку
+		listEvents = append(listEvents, tmp)
+	}
+	if err := rows.Err(); err != nil {
+		// ошибка при получении результатов
+		return nil
+	}
+
+	return listEvents
+}
+
+func (s *Storage) ListEventsByWeek(choosenWeek time.Time) storage.ListEvents {
+	// TODO
 	return nil
 }
 
-func (s *Storage) Update(storage.EventID, storage.Event) error {
-	return nil
-}
-
-func (s *Storage) Delete(storage.EventID) {
-
-}
-
-func (s *Storage) ListEventsByDay(time.Time) storage.ListEvents {
-	return nil
-}
-
-func (s *Storage) ListEventsByWeek(time.Time) storage.ListEvents {
-	return nil
-}
-
-func (s *Storage) ListEventsByMonth(time.Time) storage.ListEvents {
+func (s *Storage) ListEventsByMonth(choosenMonth time.Time) storage.ListEvents {
+	// TODO
 	return nil
 }
 
 func (s *Storage) ListAllEvents() storage.ListEvents {
+	// TODO
 	return nil
 }
 
-func (s *Storage) ListUserEvents(storage.UserID) storage.ListEvents {
+func (s *Storage) ListUserEvents(u storage.UserID) storage.ListEvents {
+	// TODO
 	return nil
 }

@@ -53,7 +53,7 @@ func (s *Storage) ListEventsByDay(choosenDay time.Time) storage.ListEvents {
 	day := choosenDay.Day()
 	s.mu.RLock()
 	for _, val := range s.db {
-		if val.Date.Day() == day {
+		if val.StartDate.Day() == day {
 			listEvents = append(listEvents, val)
 		}
 	}
@@ -67,7 +67,7 @@ func (s *Storage) ListEventsByWeek(choosenWeek time.Time) storage.ListEvents {
 	s.mu.RLock()
 	var vWeek, vYear int
 	for _, val := range s.db {
-		vYear, vWeek = val.Date.ISOWeek()
+		vYear, vWeek = val.StartDate.ISOWeek()
 		if (vWeek == week) && (vYear == year) {
 			listEvents = append(listEvents, val)
 		}
@@ -81,7 +81,7 @@ func (s *Storage) ListEventsByMonth(choosenMonth time.Time) storage.ListEvents {
 	month := choosenMonth.Month()
 	s.mu.RLock()
 	for _, val := range s.db {
-		if val.Date.Month() == month {
+		if val.StartDate.Month() == month {
 			listEvents = append(listEvents, val)
 		}
 	}
