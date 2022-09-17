@@ -1,13 +1,17 @@
 package logger
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/config"
+)
 
 type Logger struct { // TODO
 	Level string // Уровень логирования
 }
 
-func New(level string) *Logger {
-	return &Logger{Level: level}
+func New(loggerConf *config.LoggerConf) *Logger {
+	return &Logger{Level: loggerConf.Level}
 }
 
 func (l Logger) Info(msg string) {

@@ -36,10 +36,10 @@ func main() {
 	}
 	fmt.Printf("Read config: %+v\n", conf)
 
-	logg := logger.New(conf.Logger.Level)
+	logg := logger.New(conf.Logger)
 	fmt.Printf("Create logger: %+v\n", logg)
 
-	///
+	// store := storage.New(conf.Storage)
 	storageTempl := storage.New(conf.Storage.Store, conf.Storage.DatabaseURL)
 	fmt.Printf("Create storage config: %+v\n", storageTempl)
 

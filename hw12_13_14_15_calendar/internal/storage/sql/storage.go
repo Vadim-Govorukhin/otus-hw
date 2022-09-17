@@ -12,7 +12,7 @@ import (
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage"
 )
 
-var Queries = map[string]string{
+var requests = map[string]string{
 	"insert": `INSERT INTO events(event_id, title, start_date, end_date, descr, user_id, notify_user_time)
 				values(:event_id, :title, :start_date, :end_date, :descr, :user_id, :notify_user_time);`,
 	"select_day": `SELECT * FROM events WHERE DAY(start_date) = :start_date`,
@@ -50,7 +50,7 @@ func (s *Storage) Connect(ctx context.Context) error {
 
 func (s *Storage) PreparedQueries(ctx context.Context) error {
 	// создаем подготовленный запрос
-	for key, val := range Queries {
+	for key, val := range requests {
 		stmt, err := s.db.PrepareNamed(val) // *sqlx.NamedStmt
 		if err != nil {
 			fmt.Printf("failed to prepare %s query '%v'\n error: %v", key, val, err)
