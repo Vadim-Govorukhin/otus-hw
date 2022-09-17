@@ -1,11 +1,13 @@
 package storage
 
+import "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/config"
+
 type Storage struct { // TODO
-	Store       string // Тип хранилища "memory" или "sql"
+	Type        string // Тип хранилища "memory" или "sql"
 	DatabaseURL string // Адрес базы данных
 }
 
-func New(store, databaseURL string) *Storage {
-	return &Storage{Store: store,
-		DatabaseURL: databaseURL}
+func New(storeConf *config.StorageConf) *Storage {
+	return &Storage{Type: storeConf.Type,
+		DatabaseURL: storeConf.DatabaseURL}
 }

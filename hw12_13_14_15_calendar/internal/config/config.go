@@ -14,7 +14,7 @@ type LoggerConf struct {
 }
 
 type StorageConf struct {
-	Store       string `toml:"store"`        // Тип хранилища "memory" или "sql"
+	Type        string `toml:"type"`         // Тип хранилища "memory" или "sql"
 	DatabaseURL string `toml:"database_url"` // Адрес базы данных
 }
 

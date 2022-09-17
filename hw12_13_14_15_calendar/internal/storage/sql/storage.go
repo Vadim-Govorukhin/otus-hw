@@ -36,13 +36,13 @@ func (s *Storage) Connect(ctx context.Context) error {
 
 	if err != nil {
 		fmt.Printf("failed to load driver: %v\n", err)
-		return storage.ErrorLoadDriver
+		return ErrorLoadDriver
 	}
 	fmt.Println(db.Stats())
 
 	if err := db.Ping(); err != nil {
 		fmt.Printf("failed to connect to db: %v\n", err)
-		return storage.ErrorConnectDB
+		return ErrorConnectDB
 	}
 	s.db = db
 	return nil

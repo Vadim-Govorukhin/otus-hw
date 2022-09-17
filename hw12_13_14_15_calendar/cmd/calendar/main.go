@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -39,18 +40,13 @@ func main() {
 	logg := logger.New(conf.Logger)
 	fmt.Printf("Create logger: %+v\n", logg)
 
-	// store := storage.New(conf.Storage)
-	storageTempl := storage.New(conf.Storage.Store, conf.Storage.DatabaseURL)
-	fmt.Printf("Create storage config: %+v\n", storageTempl)
-
-	var store storage.EventStorage
-	switch conf.Storage.Store {
-	case "memory":
-		store = memorystorage.New()
-	case "sql":
-		store = sqlstorage.New(storageTempl)
+	store, err := initStorage(conf.Storage)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
-	///
+	fmt.Printf("Create storage: %+v\n", store)
+
 	var _ = store
 	//storage := memorystorage.New()
 	/*
@@ -81,4 +77,18 @@ func main() {
 			os.Exit(1) //nolint:gocritic
 		}
 	*/
+}
+
+// Перенести в storage куда-то
+func initStorage(conf *config.StorageConf) (store storage.EventStorage, err error) {
+
+	storageTempl := storage.New(conf)
+
+	switch conf.Type {
+	case "memory":
+		return memorystorage.New(storageTempl), nil
+	case "sql":
+		return sqlstorage.New(storageTempl), nil
+	}
+	return nil, errors.New("wrong type of storage")
 }

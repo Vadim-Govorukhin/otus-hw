@@ -4,7 +4,7 @@ bind_addr = ":8080"
 level = "INFO"
 
 [storage]
-store = "memory"
+type = "memory"
 database_url = "postgres://otus:otus@localhost:5432/calendar?sslmode=disable"
 
 # TODO

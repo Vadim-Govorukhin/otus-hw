@@ -9,16 +9,19 @@ import (
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage"
 )
 
-var _ storage.EventStorage = New()
+var _ storage.EventStorage = New(nil)
 
 type Storage struct {
-	mu sync.RWMutex
-	db map[model.EventID]model.Event
+	config *storage.Storage
+	mu     sync.RWMutex
+	db     map[model.EventID]model.Event
 }
 
-func New() *Storage {
+func New(config *storage.Storage) *Storage {
 	fmt.Println("Create memory Storage")
-	return &Storage{db: make(map[model.EventID]model.Event, 0)}
+	return &Storage{
+		config: config,
+		db:     make(map[model.EventID]model.Event, 0)}
 }
 
 func (s *Storage) Create(e model.Event) (err error) {

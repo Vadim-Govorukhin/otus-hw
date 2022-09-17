@@ -20,11 +20,12 @@ func teardown(s *sqlstorage.Storage, tables ...string) {
 		// TODO
 	}
 }
-
 func TestStorage(t *testing.T) {
+
 	t.Run("connect to dev db", func(t *testing.T) {
 		fmt.Printf("====== start test %s =====\n", t.Name())
-		storageTempl := storage.New("sql", devDatabaseURL)
+
+		storageTempl := &storage.Storage{Type: "sql", DatabaseURL: devDatabaseURL}
 		store := sqlstorage.New(storageTempl)
 
 		err := store.Connect(context.Background())
@@ -33,7 +34,7 @@ func TestStorage(t *testing.T) {
 
 	t.Run("connect to test db", func(t *testing.T) {
 		fmt.Printf("====== start test %s =====\n", t.Name())
-		storageTempl := storage.New("sql", testDatabaseURL)
+		storageTempl := &storage.Storage{Type: "sql", DatabaseURL: testDatabaseURL}
 		store := sqlstorage.New(storageTempl)
 
 		err := store.Connect(context.Background())

@@ -41,10 +41,12 @@ var (
 	}
 )
 
+var storageTempl = &storage.Storage{Type: "memory", DatabaseURL: ""}
+
 func TestStorage(t *testing.T) {
 	t.Run("create event", func(t *testing.T) {
 		fmt.Printf("====== start test %s =====\n", t.Name())
-		store := memorystorage.New()
+		store := memorystorage.New(storageTempl)
 
 		err := store.Create(testEvent)
 		require.NoError(t, err)
@@ -55,7 +57,7 @@ func TestStorage(t *testing.T) {
 
 	t.Run("Update and delete event", func(t *testing.T) {
 		fmt.Printf("====== start test %s =====\n", t.Name())
-		store := memorystorage.New()
+		store := memorystorage.New(storageTempl)
 
 		store.Create(testEvent)
 		err := store.Update(model.EventID("0"), model.Event{})
@@ -80,7 +82,7 @@ func TestStorage(t *testing.T) {
 
 	t.Run("check lists of events", func(t *testing.T) {
 		fmt.Printf("====== start test %s =====\n", t.Name())
-		store := memorystorage.New()
+		store := memorystorage.New(storageTempl)
 
 		err := store.Create(testEvent)
 		require.NoError(t, err)
