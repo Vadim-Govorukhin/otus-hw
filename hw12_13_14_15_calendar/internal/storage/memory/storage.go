@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/model"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage"
 )
 
@@ -12,14 +13,15 @@ var _ storage.EventStorage = New()
 
 type Storage struct {
 	mu sync.RWMutex
-	db map[storage.EventID]storage.Event
+	db map[model.EventID]model.Event
 }
 
 func New() *Storage {
-	return &Storage{db: make(map[storage.EventID]storage.Event, 0)}
+	fmt.Println("Create memory Storage")
+	return &Storage{db: make(map[model.EventID]model.Event, 0)}
 }
 
-func (s *Storage) Create(e storage.Event) (err error) {
+func (s *Storage) Create(e model.Event) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	fmt.Printf("Добавляем событие с id=%s\n", e.ID)
@@ -31,7 +33,7 @@ func (s *Storage) Create(e storage.Event) (err error) {
 	return
 }
 
-func (s *Storage) Update(eid storage.EventID, e storage.Event) (err error) {
+func (s *Storage) Update(eid model.EventID, e model.Event) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if eid != e.ID {
@@ -42,7 +44,7 @@ func (s *Storage) Update(eid storage.EventID, e storage.Event) (err error) {
 	return
 }
 
-func (s *Storage) Delete(eid storage.EventID) {
+func (s *Storage) Delete(eid model.EventID) {
 	s.mu.Lock()
 	delete(s.db, eid)
 	s.mu.Unlock()
@@ -99,7 +101,7 @@ func (s *Storage) ListAllEvents() storage.ListEvents {
 	return listEvents
 }
 
-func (s *Storage) ListUserEvents(userID storage.UserID) storage.ListEvents {
+func (s *Storage) ListUserEvents(userID model.UserID) storage.ListEvents {
 	listEvents := make(storage.ListEvents, 0) //
 	s.mu.RLock()
 	for _, val := range s.db {

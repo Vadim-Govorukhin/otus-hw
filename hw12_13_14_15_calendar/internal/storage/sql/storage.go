@@ -8,6 +8,7 @@ import (
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jmoiron/sqlx"
 
+	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/model"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage"
 )
 
@@ -24,6 +25,7 @@ type Storage struct { // TODO
 }
 
 func New(config *storage.Storage) *Storage {
+	fmt.Println("Create SQL Storage")
 	return &Storage{
 		config:        config,
 		preparedQuery: make(map[string]*sqlx.NamedStmt)}
@@ -33,12 +35,13 @@ func (s *Storage) Connect(ctx context.Context) error {
 	db, err := sqlx.Open("pgx", s.config.DatabaseURL)
 
 	if err != nil {
-		fmt.Printf("failed to load driver: %v", err)
+		fmt.Printf("failed to load driver: %v\n", err)
 		return storage.ErrorLoadDriver
 	}
+	fmt.Println(db.Stats())
 
-	if err := db.PingContext(ctx); err != nil {
-		fmt.Printf("failed to connect to db: %v", err)
+	if err := db.Ping(); err != nil {
+		fmt.Printf("failed to connect to db: %v\n", err)
 		return storage.ErrorConnectDB
 	}
 	s.db = db
@@ -72,7 +75,7 @@ func (s *Storage) Close(ctx context.Context) {
 	}
 }
 
-func (s *Storage) Create(e storage.Event) error {
+func (s *Storage) Create(e model.Event) error {
 	_, err := s.preparedQuery["insert"].Exec(e)
 	if err != nil {
 		fmt.Printf("failed to insert event %#v to db: error %v", e, err)
@@ -81,12 +84,12 @@ func (s *Storage) Create(e storage.Event) error {
 	return nil
 }
 
-func (s *Storage) Update(eid storage.EventID, e storage.Event) error {
+func (s *Storage) Update(eid model.EventID, e model.Event) error {
 	// TODO
 	return nil
 }
 
-func (s *Storage) Delete(eid storage.EventID) {
+func (s *Storage) Delete(eid model.EventID) {
 	// TODO
 }
 
@@ -100,7 +103,7 @@ func (s *Storage) ListEventsByDay(choosenDay time.Time) storage.ListEvents {
 	defer rows.Close()
 
 	for rows.Next() {
-		var tmp storage.Event
+		var tmp model.Event
 		if err := rows.Scan(&tmp); err != nil {
 			// ошибка сканирования
 			return nil
@@ -131,7 +134,7 @@ func (s *Storage) ListAllEvents() storage.ListEvents {
 	return nil
 }
 
-func (s *Storage) ListUserEvents(u storage.UserID) storage.ListEvents {
+func (s *Storage) ListUserEvents(u model.UserID) storage.ListEvents {
 	// TODO
 	return nil
 }

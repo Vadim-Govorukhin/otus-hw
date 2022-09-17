@@ -40,15 +40,15 @@ func main() {
 	fmt.Printf("Create logger: %+v\n", logg)
 
 	///
-	storeConf := storage.New(*conf.Storage)
-	fmt.Printf("Create storage config: %+v\n", storeConf)
+	storageTempl := storage.New(conf.Storage.Store, conf.Storage.DatabaseURL)
+	fmt.Printf("Create storage config: %+v\n", storageTempl)
 
 	var store storage.EventStorage
 	switch conf.Storage.Store {
 	case "memory":
 		store = memorystorage.New()
 	case "sql":
-		store = sqlstorage.New(storeConf)
+		store = sqlstorage.New(storageTempl)
 	}
 	///
 	var _ = store
