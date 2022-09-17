@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -10,9 +9,7 @@ import (
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/logger"
-	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage"
-	memorystorage "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage/memory"
-	sqlstorage "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage/sql"
+	basestorage "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage/base"
 	// internalhttp "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/server/http"
 )
 
@@ -40,14 +37,14 @@ func main() {
 	logg := logger.New(conf.Logger)
 	fmt.Printf("Create logger: %+v\n", logg)
 
-	store, err := initStorage(conf.Storage)
+	storage, err := basestorage.InitStorage(conf.Storage)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	fmt.Printf("Create storage: %+v\n", store)
+	fmt.Printf("Create storage: %+v\n", storage)
 
-	var _ = store
+	var _ = storage
 	//storage := memorystorage.New()
 	/*
 		calendar := app.New(logg, storage)
@@ -77,18 +74,4 @@ func main() {
 			os.Exit(1) //nolint:gocritic
 		}
 	*/
-}
-
-// Перенести в storage куда-то
-func initStorage(conf *config.StorageConf) (store storage.EventStorage, err error) {
-
-	storageTempl := storage.New(conf)
-
-	switch conf.Type {
-	case "memory":
-		return memorystorage.New(storageTempl), nil
-	case "sql":
-		return sqlstorage.New(storageTempl), nil
-	}
-	return nil, errors.New("wrong type of storage")
 }
