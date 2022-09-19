@@ -53,7 +53,7 @@ func (s *Storage) Delete(eid model.EventID) {
 	s.mu.Unlock()
 }
 
-func (s *Storage) ListEventsByDay(choosenDay time.Time) storage.ListEvents {
+func (s *Storage) ListEventsByDay(choosenDay time.Time) (storage.ListEvents, error) {
 	listEvents := make(storage.ListEvents, 0) //
 	day := choosenDay.Day()
 	s.mu.RLock()
@@ -63,10 +63,10 @@ func (s *Storage) ListEventsByDay(choosenDay time.Time) storage.ListEvents {
 		}
 	}
 	s.mu.RUnlock()
-	return listEvents
+	return listEvents, nil
 }
 
-func (s *Storage) ListEventsByWeek(choosenWeek time.Time) storage.ListEvents {
+func (s *Storage) ListEventsByWeek(choosenWeek time.Time) (storage.ListEvents, error) {
 	listEvents := make(storage.ListEvents, 0) //
 	year, week := choosenWeek.ISOWeek()
 	s.mu.RLock()
@@ -78,10 +78,10 @@ func (s *Storage) ListEventsByWeek(choosenWeek time.Time) storage.ListEvents {
 		}
 	}
 	s.mu.RUnlock()
-	return listEvents
+	return listEvents, nil
 }
 
-func (s *Storage) ListEventsByMonth(choosenMonth time.Time) storage.ListEvents {
+func (s *Storage) ListEventsByMonth(choosenMonth time.Time) (storage.ListEvents, error) {
 	listEvents := make(storage.ListEvents, 0) //
 	month := choosenMonth.Month()
 	s.mu.RLock()
@@ -91,20 +91,20 @@ func (s *Storage) ListEventsByMonth(choosenMonth time.Time) storage.ListEvents {
 		}
 	}
 	s.mu.RUnlock()
-	return listEvents
+	return listEvents, nil
 }
 
-func (s *Storage) ListAllEvents() storage.ListEvents {
+func (s *Storage) ListAllEvents() (storage.ListEvents, error) {
 	listEvents := make(storage.ListEvents, len(s.db))
 	i := 0
 	for _, val := range s.db {
 		listEvents[i] = val
 		i++
 	}
-	return listEvents
+	return listEvents, nil
 }
 
-func (s *Storage) ListUserEvents(userID model.UserID) storage.ListEvents {
+func (s *Storage) ListUserEvents(userID model.UserID) (storage.ListEvents, error) {
 	listEvents := make(storage.ListEvents, 0) //
 	s.mu.RLock()
 	for _, val := range s.db {
@@ -113,5 +113,5 @@ func (s *Storage) ListUserEvents(userID model.UserID) storage.ListEvents {
 		}
 	}
 	s.mu.RUnlock()
-	return listEvents
+	return listEvents, nil
 }

@@ -53,7 +53,8 @@ func TestStorage(t *testing.T) {
 		err := store.Create(testEvent)
 		require.NoError(t, err)
 
-		list := store.ListAllEvents()
+		list, err := store.ListAllEvents()
+		require.NoError(t, err)
 		require.Equal(t, storage.ListEvents{testEvent}, list)
 	})
 
@@ -68,17 +69,20 @@ func TestStorage(t *testing.T) {
 		tmpEvent := model.Event{ID: testEvent.ID}
 		err = store.Update(testEvent.ID, tmpEvent)
 		require.NoError(t, err)
-		list := store.ListAllEvents()
+		list, err := store.ListAllEvents()
+		require.NoError(t, err)
 		require.Equal(t, storage.ListEvents{tmpEvent}, list)
 
 		err = store.Create(testEvent)
 		require.ErrorIs(t, err, storage.ErrorEventIDBusy)
-		list = store.ListAllEvents()
+		list, err = store.ListAllEvents()
+		require.NoError(t, err)
 		require.Equal(t, storage.ListEvents{tmpEvent}, list)
 
 		err = store.Create(testEvent2)
 		require.NoError(t, err)
-		list = store.ListAllEvents()
+		list, err = store.ListAllEvents()
+		require.NoError(t, err)
 		require.True(t, list.Equal(storage.ListEvents{tmpEvent, testEvent2}))
 	})
 
@@ -94,16 +98,20 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 		date := time.Date(2022, time.September, 16, 1, 2, 3, 0, time.UTC)
 
-		list := store.ListEventsByDay(date)
+		list, err := store.ListEventsByDay(date)
+		require.NoError(t, err)
 		require.True(t, list.Equal(storage.ListEvents{testEvent2, testEvent3}))
 
-		list = store.ListEventsByWeek(date)
+		list, err = store.ListEventsByWeek(date)
+		require.NoError(t, err)
 		require.True(t, list.Equal(storage.ListEvents{testEvent2, testEvent}))
 
-		list = store.ListEventsByMonth(date)
+		list, err = store.ListEventsByMonth(date)
+		require.NoError(t, err)
 		require.True(t, list.Equal(storage.ListEvents{testEvent2, testEvent}))
 
-		list = store.ListUserEvents(0)
+		list, err = store.ListUserEvents(0)
+		require.NoError(t, err)
 		require.True(t, list.Equal(storage.ListEvents{testEvent3, testEvent}))
 	})
 }
