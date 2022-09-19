@@ -14,8 +14,8 @@ import (
 
 var requests = map[string]string{
 	"insert": `INSERT INTO events(event_id, title, start_date, end_date, descr, user_id, notify_user_time)
-				values(:event_id, :title, :start_date, :end_date, :descr, :user_id, :notify_user_time);`,
-	"select_day": `SELECT * FROM events WHERE DAY(start_date) = :start_date`,
+				VALUES(:event_id, :title, :start_date, :end_date, :descr, :user_id, :notify_user_time);`,
+	"select_day": `SELECT * FROM events WHERE EXTRACT(DAY FROM start_date) = :start_date`,
 }
 
 type Storage struct { // TODO
@@ -76,7 +76,12 @@ func (s *Storage) Close(ctx context.Context) {
 }
 
 func (s *Storage) Create(e model.Event) error {
-	_, err := s.preparedQuery["insert"].Exec(e)
+	query, ok := s.preparedQuery["insert"]
+	if !ok {
+		fmt.Printf("prepared query not found")
+		return storage.ErrorPreparedQueryNotFound
+	}
+	_, err := query.Exec(e)
 	if err != nil {
 		fmt.Printf("failed to insert event %#v to db: error %v", e, err)
 		return err

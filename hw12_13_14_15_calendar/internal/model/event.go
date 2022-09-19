@@ -1,9 +1,13 @@
 package model
 
-import "time"
+import (
+	"time"
 
-type EventID string
-type UserID string
+	"github.com/google/uuid"
+)
+
+type EventID = uuid.UUID
+type UserID = int
 
 type Event struct {
 	ID             EventID       `db:"event_id"`         // Уникальный идентификатор события
