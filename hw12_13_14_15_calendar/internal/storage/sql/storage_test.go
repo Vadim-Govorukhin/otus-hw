@@ -37,11 +37,13 @@ func teardown(s *Storage, tables []string) error {
 
 func setupTest(t *testing.T) *Storage {
 	t.Helper()
+	fmt.Printf("====== start test %s =====\n", t.Name())
+
+	ctx := context.Background()
 
 	storageTempl := &storage.Storage{Type: "sql", DatabaseURL: testDatabaseURL}
 	store := New(storageTempl)
 
-	ctx := context.Background()
 	err := store.Connect(ctx)
 	require.NoError(t, err)
 
@@ -57,43 +59,69 @@ func TestStorage(t *testing.T) {
 
 		storageTempl := &storage.Storage{Type: "sql", DatabaseURL: devDatabaseURL}
 		store := New(storageTempl)
+		defer store.Close(context.Background())
 
 		err := store.Connect(context.Background())
 		require.NoError(t, err)
 	})
 
 	t.Run("connect to test db", func(t *testing.T) {
-		fmt.Printf("====== start test %s =====\n", t.Name())
-		storageTempl := &storage.Storage{Type: "sql", DatabaseURL: testDatabaseURL}
-		store := New(storageTempl)
-
-		err := store.Connect(context.Background())
-		require.NoError(t, err)
-	})
-
-	t.Run("prepare queries", func(t *testing.T) {
-		fmt.Printf("====== start test %s =====\n", t.Name())
-		_ = setupTest(t)
+		store := setupTest(t)
+		defer store.Close(context.Background())
 	})
 
 	t.Run("create events in test db", func(t *testing.T) {
-		fmt.Printf("====== start test %s =====\n", t.Name())
 		store := setupTest(t)
 		defer func() {
 			err := teardown(store, []string{"events"})
 			require.NoError(t, err)
+			store.Close(context.Background())
 		}()
 
 		err := store.Create(storage.TestEvent)
 		require.NoError(t, err)
 	})
 
-	t.Run("lists events in test db", func(t *testing.T) {
-		fmt.Printf("====== start test %s =====\n", t.Name())
+	t.Run("Update and delete event", func(t *testing.T) {
 		store := setupTest(t)
 		defer func() {
 			err := teardown(store, []string{"events"})
 			require.NoError(t, err)
+			store.Close(context.Background())
+		}()
+
+		store.Create(storage.TestEvent)
+		tmpEvent := storage.TestEvent3
+		err := store.Update(storage.TestEvent.ID, tmpEvent)
+		require.ErrorIs(t, err, storage.ErrorWrongUpdateID)
+
+		tmpEvent.ID = storage.TestEvent.ID
+		err = store.Update(storage.TestEvent.ID, tmpEvent)
+		require.NoError(t, err)
+		list, err := store.ListAllEvents()
+		require.NoError(t, err)
+		require.Equal(t, storage.ListEvents{tmpEvent}, list)
+
+		err = store.Create(storage.TestEvent)
+		require.Error(t, err)
+		list, err = store.ListAllEvents()
+		require.NoError(t, err)
+		require.Equal(t, storage.ListEvents{tmpEvent}, list)
+
+		err = store.Create(storage.TestEvent2)
+		require.NoError(t, err)
+		store.Delete(storage.TestEvent.ID)
+		list, err = store.ListAllEvents()
+		require.NoError(t, err)
+		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2})
+	})
+
+	t.Run("lists events in test db", func(t *testing.T) {
+		store := setupTest(t)
+		defer func() {
+			err := teardown(store, []string{"events"})
+			require.NoError(t, err)
+			store.Close(context.Background())
 		}()
 
 		err := store.Create(storage.TestEvent)
@@ -105,11 +133,11 @@ func TestStorage(t *testing.T) {
 	})
 
 	t.Run("lists events in test db", func(t *testing.T) {
-		fmt.Printf("====== start test %s =====\n", t.Name())
 		store := setupTest(t)
 		defer func() {
 			err := teardown(store, []string{"events"})
 			require.NoError(t, err)
+			store.Close(context.Background())
 		}()
 
 		err := store.Create(storage.TestEvent)
@@ -130,11 +158,10 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent3})
 
-		/*
-			list, err = store.ListEventsByWeek(date)
-			require.NoError(t, err)
-			require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent})
-		*/
+		list, err = store.ListEventsByWeek(date)
+		require.NoError(t, err)
+		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent})
+
 		list, err = store.ListEventsByMonth(date)
 		require.NoError(t, err)
 		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent})
@@ -144,18 +171,4 @@ func TestStorage(t *testing.T) {
 		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent3, storage.TestEvent})
 
 	})
-
-	/*
-		t.Run("update and delete events in test db", func(t *testing.T) {
-			fmt.Printf("====== start test %s =====\n", t.Name())
-			store := setupTest(t)
-			defer func() {
-				err := teardown(store, []string{"events"})
-				require.NoError(t, err)
-			}()
-
-			err := store.Create(storage.TestEvent)
-			require.Error(t, err)
-		})
-	*/
 }

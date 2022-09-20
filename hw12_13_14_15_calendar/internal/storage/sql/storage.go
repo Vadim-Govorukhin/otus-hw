@@ -115,11 +115,12 @@ func (s *Storage) Update(eid model.EventID, e model.Event) error {
 }
 
 func (s *Storage) Delete(eid model.EventID) {
+	m := map[string]interface{}{"eid": eid}
 	query, ok := s.preparedQuery["delete"]
 	if !ok {
 		fmt.Printf("prepared query not found")
 	}
-	_, err := query.Exec(eid)
+	_, err := query.Exec(m)
 	if err != nil {
 		fmt.Printf("failed to delete event %#v: error %v", eid, err)
 	}
@@ -137,8 +138,8 @@ func (s *Storage) ListEventsByDay(choosenDay time.Time) (storage.ListEvents, err
 func (s *Storage) ListEventsByWeek(choosenWeek time.Time) (storage.ListEvents, error) {
 	year, week := choosenWeek.ISOWeek()
 	param := map[string]interface{}{
-		"start_date_year": string(rune(year)),
-		"start_date_week": string(rune(week)),
+		"start_date_year": fmt.Sprint(year),
+		"start_date_week": fmt.Sprint(week),
 	}
 	listEvents, err := s.listEventsByQuery("select_week", param)
 	if err != nil {
