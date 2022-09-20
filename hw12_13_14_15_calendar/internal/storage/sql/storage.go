@@ -146,8 +146,11 @@ func (s *Storage) ListEventsByMonth(choosenMonth time.Time) (storage.ListEvents,
 }
 
 func (s *Storage) ListAllEvents() (storage.ListEvents, error) {
-	// TODO
-	return nil, nil
+	listEvents, err := s.listEventsByQuery("select_all", nil)
+	if err != nil {
+		return nil, err
+	}
+	return listEvents, nil
 }
 
 func (s *Storage) ListUserEvents(u model.UserID) (storage.ListEvents, error) {
@@ -160,14 +163,23 @@ func (s *Storage) ListUserEvents(u model.UserID) (storage.ListEvents, error) {
 
 func (s *Storage) listEventsByQuery(queryKey string, param interface{}) (storage.ListEvents, error) {
 	listEvents := make(storage.ListEvents, 0) //
-	query, ok := s.preparedQuery[queryKey]
-	if !ok {
-		fmt.Printf("prepared query not found")
-		return nil, storage.ErrorPreparedQueryNotFound
+
+	var err error
+	var rows *sqlx.Rows
+	var query interface{}
+	if param != nil {
+		query, ok := s.preparedQuery[queryKey]
+		if !ok {
+			fmt.Printf("prepared query not found")
+			return nil, storage.ErrorPreparedQueryNotFound
+		}
+
+		rows, err = query.Queryx(param)
+	} else {
+		query = requests[queryKey]
+		rows, err = s.db.Queryx(query.(string))
 	}
-	//if param != nil {
-	rows, err := query.Queryx(param)
-	//}
+
 	if err != nil {
 		fmt.Printf("failed to select events by '%v' with param %v: error %v", query, param, err)
 		return nil, err
@@ -176,7 +188,8 @@ func (s *Storage) listEventsByQuery(queryKey string, param interface{}) (storage
 
 	for rows.Next() {
 		var tmp model.Event
-		if err := rows.Scan(&tmp); err != nil {
+		if err := rows.Scan(&tmp.ID, &tmp.Title, &tmp.StartDate, &tmp.EndDate,
+			&tmp.Description, &tmp.UserID, &tmp.NotifyUserTime); err != nil {
 			return nil, err
 		}
 		listEvents = append(listEvents, tmp)

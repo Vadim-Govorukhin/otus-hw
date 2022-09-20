@@ -25,28 +25,3 @@ type Notification struct {
 }
 
 type ListEvents []model.Event
-
-func (l *ListEvents) Equal(tgt ListEvents) bool {
-	if len(*l) != len(tgt) {
-		return false
-	}
-
-	lMap := make(map[model.EventID]model.Event, len(*l))
-	for _, item := range *l {
-		lMap[item.ID] = item
-	}
-
-	tgtMap := make(map[model.EventID]model.Event, len(*l))
-	for _, item := range tgt {
-		tgtMap[item.ID] = item
-	}
-
-	for key, val := range lMap {
-		tgtVal, ok := tgtMap[key]
-		if !ok || tgtVal != val {
-			return false
-		}
-	}
-	return true
-
-}
