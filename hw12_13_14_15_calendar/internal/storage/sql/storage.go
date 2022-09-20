@@ -18,9 +18,10 @@ var requests = map[string]string{
 	"update": `UPDATE events SET (event_id, title, start_date, end_date, descr, user_id, notify_user_time)=
 				(:event_id, :title, :start_date, :end_date, :descr, :user_id, :notify_user_time)
 				WHERE event_id=:event_id;`,
-	"delete":       `DELETE FROM events WHERE event_id=:eid;`,
-	"select_day":   `SELECT * FROM events WHERE EXTRACT(DAY FROM start_date) = :start_date;`,
-	"select_week":  `SELECT * FROM events;`,
+	"delete":     `DELETE FROM events WHERE event_id=:eid;`,
+	"select_day": `SELECT * FROM events WHERE EXTRACT(DAY FROM start_date) = :start_date;`,
+	"select_week": `SELECT * FROM events WHERE EXTRACT(WEEK FROM start_date) = :start_date_week AND
+					EXTRACT(YEAR FROM start_date) = :start_date_year;`,
 	"select_month": `SELECT * FROM events WHERE EXTRACT(MONTH FROM start_date) = :start_date;`,
 	"select_all":   `SELECT * FROM events;`,
 	"select_user":  `SELECT * FROM events WHERE user_id = :user_id;`,
@@ -133,12 +134,21 @@ func (s *Storage) ListEventsByDay(choosenDay time.Time) (storage.ListEvents, err
 }
 
 func (s *Storage) ListEventsByWeek(choosenWeek time.Time) (storage.ListEvents, error) {
-	// TODO
-	return nil, nil
+	year, week := choosenWeek.ISOWeek()
+	param := map[string]interface{}{
+		"start_date_year": string(rune(year)),
+		"start_date_week": string(rune(week)),
+	}
+	var _ = param
+	listEvents, err := s.listEventsByQuery("select_week", "") //param)
+	if err != nil {
+		return nil, err
+	}
+	return listEvents, nil
 }
 
 func (s *Storage) ListEventsByMonth(choosenMonth time.Time) (storage.ListEvents, error) {
-	listEvents, err := s.listEventsByQuery("select_month", choosenMonth.Month())
+	listEvents, err := s.listEventsByQuery("select_month", "") //choosenMonth.Month())
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +156,7 @@ func (s *Storage) ListEventsByMonth(choosenMonth time.Time) (storage.ListEvents,
 }
 
 func (s *Storage) ListAllEvents() (storage.ListEvents, error) {
-	listEvents, err := s.listEventsByQuery("select_all", nil)
+	listEvents, err := s.listEventsByQuery("select_all", nil) //nil)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +164,7 @@ func (s *Storage) ListAllEvents() (storage.ListEvents, error) {
 }
 
 func (s *Storage) ListUserEvents(u model.UserID) (storage.ListEvents, error) {
-	listEvents, err := s.listEventsByQuery("select_user", u)
+	listEvents, err := s.listEventsByQuery("select_user", "") //u)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +176,7 @@ func (s *Storage) listEventsByQuery(queryKey string, param interface{}) (storage
 
 	var err error
 	var rows *sqlx.Rows
-	var query interface{}
+	//var query interface{}
 	if param != nil {
 		query, ok := s.preparedQuery[queryKey]
 		if !ok {
@@ -176,12 +186,12 @@ func (s *Storage) listEventsByQuery(queryKey string, param interface{}) (storage
 
 		rows, err = query.Queryx(param)
 	} else {
-		query = requests[queryKey]
-		rows, err = s.db.Queryx(query.(string))
+		query := requests[queryKey]
+		rows, err = s.db.Queryx(query)
 	}
 
 	if err != nil {
-		fmt.Printf("failed to select events by '%v' with param %v: error %v", query, param, err)
+		fmt.Printf("failed to select events by '%v' with param %v: error %v", queryKey, param, err)
 		return nil, err
 	}
 	defer rows.Close()
