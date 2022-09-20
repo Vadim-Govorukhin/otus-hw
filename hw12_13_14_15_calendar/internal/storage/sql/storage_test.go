@@ -129,20 +129,20 @@ func TestStorage(t *testing.T) {
 		list, err = store.ListEventsByDay(date)
 		require.NoError(t, err)
 		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent3})
+
 		/*
-
-				list, err = store.ListEventsByWeek(date)
-				require.NoError(t, err)
-				require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent})
-
-			list, err = store.ListEventsByMonth(date)
+			list, err = store.ListEventsByWeek(date)
 			require.NoError(t, err)
 			require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent})
-
-			list, err = store.ListUserEvents(0)
-			require.NoError(t, err)
-			require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent3, storage.TestEvent})
 		*/
+		list, err = store.ListEventsByMonth(date)
+		require.NoError(t, err)
+		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent})
+
+		list, err = store.ListUserEvents(0)
+		require.NoError(t, err)
+		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent3, storage.TestEvent})
+
 	})
 
 	/*

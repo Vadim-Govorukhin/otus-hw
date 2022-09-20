@@ -126,7 +126,8 @@ func (s *Storage) Delete(eid model.EventID) {
 }
 
 func (s *Storage) ListEventsByDay(choosenDay time.Time) (storage.ListEvents, error) {
-	listEvents, err := s.listEventsByQuery("select_day", choosenDay.Day())
+	m := map[string]interface{}{"start_date": choosenDay.Day()}
+	listEvents, err := s.listEventsByQuery("select_day", m)
 	if err != nil {
 		return nil, err
 	}
@@ -139,8 +140,7 @@ func (s *Storage) ListEventsByWeek(choosenWeek time.Time) (storage.ListEvents, e
 		"start_date_year": string(rune(year)),
 		"start_date_week": string(rune(week)),
 	}
-	var _ = param
-	listEvents, err := s.listEventsByQuery("select_week", "") //param)
+	listEvents, err := s.listEventsByQuery("select_week", param)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,8 @@ func (s *Storage) ListEventsByWeek(choosenWeek time.Time) (storage.ListEvents, e
 }
 
 func (s *Storage) ListEventsByMonth(choosenMonth time.Time) (storage.ListEvents, error) {
-	listEvents, err := s.listEventsByQuery("select_month", "") //choosenMonth.Month())
+	m := map[string]interface{}{"start_date": choosenMonth.Month()}
+	listEvents, err := s.listEventsByQuery("select_month", m)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +157,7 @@ func (s *Storage) ListEventsByMonth(choosenMonth time.Time) (storage.ListEvents,
 }
 
 func (s *Storage) ListAllEvents() (storage.ListEvents, error) {
-	listEvents, err := s.listEventsByQuery("select_all", nil) //nil)
+	listEvents, err := s.listEventsByQuery("select_all", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +165,8 @@ func (s *Storage) ListAllEvents() (storage.ListEvents, error) {
 }
 
 func (s *Storage) ListUserEvents(u model.UserID) (storage.ListEvents, error) {
-	listEvents, err := s.listEventsByQuery("select_user", "") //u)
+	m := map[string]interface{}{"user_id": u}
+	listEvents, err := s.listEventsByQuery("select_user", m)
 	if err != nil {
 		return nil, err
 	}
