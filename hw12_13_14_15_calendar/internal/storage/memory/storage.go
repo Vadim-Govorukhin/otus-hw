@@ -21,7 +21,8 @@ func New(config *storage.Storage) *Storage {
 	fmt.Println("Create memory Storage")
 	return &Storage{
 		config: config,
-		db:     make(map[model.EventID]model.Event, 0)}
+		db:     make(map[model.EventID]model.Event, 0),
+	}
 }
 
 func (s *Storage) Create(e model.Event) (err error) {

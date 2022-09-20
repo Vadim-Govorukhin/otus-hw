@@ -6,8 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
-type EventID = uuid.UUID
-type UserID = int
+type (
+	EventID = uuid.UUID
+	UserID  = int
+)
 
 type Event struct {
 	ID             EventID   `db:"event_id"`         // Уникальный идентификатор события

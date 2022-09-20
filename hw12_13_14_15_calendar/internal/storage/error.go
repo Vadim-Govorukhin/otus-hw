@@ -5,14 +5,13 @@ import "errors"
 var (
 	ErrorWrongTypeStorage = errors.New("wrong type of storage")
 
-	// Db Errors
+	// Db Errors.
 	ErrorLoadDriver            = errors.New("failed to load driver")
 	ErrorConnectDB             = errors.New("failed to connect to db")
 	ErrorPreparedQueryNotFound = errors.New("prepared query not found")
 
-	// Event Errors
+	// Event Errors.
 	ErrorDayBusy       = errors.New("данное время уже занято другим событием")
 	ErrorEventIDBusy   = errors.New("cобытие с таким id уже существует")
 	ErrorWrongUpdateID = errors.New("обновление события с изменением ID")
-	// TODO
 )

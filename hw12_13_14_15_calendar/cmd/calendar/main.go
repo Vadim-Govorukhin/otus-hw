@@ -1,16 +1,19 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/BurntSushi/toml"
-
+	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/app"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/logger"
+	internalhttp "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/server/http"
 	basestorage "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage/base"
-	// internalhttp "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/server/http"
 )
 
 var configFile string
@@ -44,16 +47,18 @@ func main() {
 	}
 	fmt.Printf("Create storage: %+v\n", storage)
 
-	var _ = storage
-	//storage := memorystorage.New()
+	calendar := app.New(logg, storage)
+	server := internalhttp.NewServer(logg, calendar)
+
+	ctx, cancel := signal.NotifyContext(context.Background(),
+		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	defer cancel()
+
+	_ = server
+	_ = ctx
+
 	/*
-		calendar := app.New(logg, storage)
 
-		server := internalhttp.NewServer(logg, calendar)
-
-		ctx, cancel := signal.NotifyContext(context.Background(),
-			syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-		defer cancel()
 
 		go func() {
 			<-ctx.Done()

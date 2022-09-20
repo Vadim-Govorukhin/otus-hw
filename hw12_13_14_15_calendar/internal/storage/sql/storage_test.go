@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage"
-	_ "github.com/jackc/pgx/stdlib"
-
+	_ "github.com/jackc/pgx/stdlib" // Postgres Driver.
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +18,7 @@ const (
 
 func teardown(s *Storage, tables []string) error {
 	if len(tables) > 0 {
-		//res, err := s.db.Exec("DELETE FROM ", strings.Join(tables, " ,"))
+		// res, err := s.db.Exec("DELETE FROM ", strings.Join(tables, " ,"))
 		res, err := s.db.Exec("DELETE FROM events;")
 		if err != nil {
 			fmt.Printf("can't delete contents from %s\n with error: %v\n", tables, err)
@@ -169,6 +168,5 @@ func TestStorage(t *testing.T) {
 		list, err = store.ListUserEvents(0)
 		require.NoError(t, err)
 		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent3, storage.TestEvent})
-
 	})
 }

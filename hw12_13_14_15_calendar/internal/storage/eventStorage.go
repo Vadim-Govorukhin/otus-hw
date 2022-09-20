@@ -19,7 +19,7 @@ type EventStorage interface {
 
 type Notification struct {
 	EventID model.EventID // ID события
-	Title   string        //Заголовок события
+	Title   string        // Заголовок события
 	Date    time.Time     // Дата события
 	User    model.UserID  // Пользователь, которому отправлять
 }

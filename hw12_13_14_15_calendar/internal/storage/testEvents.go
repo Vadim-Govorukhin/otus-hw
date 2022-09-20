@@ -15,7 +15,7 @@ var (
 		EndDate:        time.Date(2022, time.December, 15, 1, 2, 3, 0, time.Local),
 		Description:    "A Testing Event0",
 		UserID:         0,
-		NotifyUserTime: time.Duration(24 * time.Hour).Seconds(),
+		NotifyUserTime: (24 * time.Hour).Seconds(),
 	}
 	TestEvent2 = model.Event{
 		ID:             uuid.New(),
@@ -24,7 +24,7 @@ var (
 		EndDate:        time.Date(2022, time.December, 15, 1, 2, 3, 0, time.Local),
 		Description:    "A Testing Event1",
 		UserID:         1,
-		NotifyUserTime: time.Duration(24 * time.Hour).Seconds(),
+		NotifyUserTime: (24 * time.Hour).Seconds(),
 	}
 	TestEvent3 = model.Event{
 		ID:             uuid.New(),
@@ -33,6 +33,6 @@ var (
 		EndDate:        time.Date(2022, time.December, 15, 1, 2, 3, 0, time.Local),
 		Description:    "A Testing Event2",
 		UserID:         0,
-		NotifyUserTime: time.Duration(24 * time.Hour).Seconds(),
+		NotifyUserTime: (24 * time.Hour).Seconds(),
 	}
 )

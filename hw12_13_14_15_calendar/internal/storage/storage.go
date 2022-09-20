@@ -8,6 +8,8 @@ type Storage struct { // TODO
 }
 
 func New(storeConf *config.StorageConf) *Storage {
-	return &Storage{Type: storeConf.Type,
-		DatabaseURL: storeConf.DatabaseURL}
+	return &Storage{
+		Type:        storeConf.Type,
+		DatabaseURL: storeConf.DatabaseURL,
+	}
 }

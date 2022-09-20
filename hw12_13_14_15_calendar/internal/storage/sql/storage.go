@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	// Postgres Driver.
 	_ "github.com/jackc/pgx/stdlib"
+
 	"github.com/jmoiron/sqlx"
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/model"
@@ -37,12 +39,12 @@ func New(config *storage.Storage) *Storage {
 	fmt.Println("Create SQL Storage")
 	return &Storage{
 		config:        config,
-		preparedQuery: make(map[string]*sqlx.NamedStmt)}
+		preparedQuery: make(map[string]*sqlx.NamedStmt),
+	}
 }
 
 func (s *Storage) Connect(ctx context.Context) error {
 	db, err := sqlx.Open("pgx", s.config.DatabaseURL)
-
 	if err != nil {
 		fmt.Printf("failed to load driver: %v\n", err)
 		return ErrorLoadDriver
@@ -179,7 +181,7 @@ func (s *Storage) listEventsByQuery(queryKey string, param interface{}) (storage
 
 	var err error
 	var rows *sqlx.Rows
-	//var query interface{}
+	// var query interface{}
 	if param != nil {
 		query, ok := s.preparedQuery[queryKey]
 		if !ok {
@@ -212,5 +214,4 @@ func (s *Storage) listEventsByQuery(queryKey string, param interface{}) (storage
 	}
 
 	return listEvents, nil
-
 }
