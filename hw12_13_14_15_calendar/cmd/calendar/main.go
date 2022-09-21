@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -49,7 +50,8 @@ func main() {
 	fmt.Printf("Create storage: %+v\n", storage)
 
 	calendar := app.New(logg, storage)
-	server := internalhttp.NewServer(logg, calendar)
+	server := internalhttp.NewServer(logg, calendar,
+		net.JoinHostPort(conf.HTTPServer.Host, conf.HTTPServer.Port))
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
