@@ -1,26 +1,51 @@
 package app
 
 import (
-	"context"
+	"time"
+
+	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/logger"
+	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/model"
+	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage"
 )
 
-type App struct { // TODO
+type App struct {
+	storage storage.EventStorage
+	logger  *logger.Logger
 }
 
-type Logger interface { // TODO
+func New(logger *logger.Logger, storage storage.EventStorage) *App {
+	return &App{logger: logger,
+		storage: storage}
 }
 
-type Storage interface { // TODO
+func (a *App) Create(e model.Event) error {
+	return a.storage.Create(e)
 }
 
-func New(logger Logger, storage Storage) *App {
-	return &App{}
+func (a *App) Update(eid model.EventID, e model.Event) error {
+	return a.storage.Update(eid, e)
 }
 
-func (a *App) CreateEvent(ctx context.Context, id, title string) error {
-	// TODO
-	return nil
-	// return a.storage.CreateEvent(storage.Event{ID: id, Title: title})
+func (a *App) Delete(eid model.EventID) {
+	a.storage.Delete(eid)
 }
 
-// TODO
+func (a *App) ListEventsByDay(date time.Time) ([]model.Event, error) {
+	return a.storage.ListEventsByDay(date)
+}
+
+func (a *App) ListEventsByWeek(date time.Time) ([]model.Event, error) {
+	return a.storage.ListEventsByWeek(date)
+}
+
+func (a *App) ListEventsByMonth(date time.Time) ([]model.Event, error) {
+	return a.storage.ListEventsByMonth(date)
+}
+
+func (a *App) ListAllEvents() ([]model.Event, error) {
+	return a.storage.ListAllEvents()
+}
+
+func (a *App) ListUserEvents(uid model.UserID) ([]model.Event, error) {
+	return a.storage.ListUserEvents(uid)
+}

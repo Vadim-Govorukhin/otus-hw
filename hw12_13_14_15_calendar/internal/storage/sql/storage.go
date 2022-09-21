@@ -35,6 +35,8 @@ type Storage struct { // TODO
 	preparedQuery map[string]*sqlx.NamedStmt
 }
 
+var _ storage.EventStorage = New(nil)
+
 func New(config *storage.Storage) *Storage {
 	fmt.Println("Create SQL Storage")
 	return &Storage{
@@ -128,7 +130,7 @@ func (s *Storage) Delete(eid model.EventID) {
 	}
 }
 
-func (s *Storage) ListEventsByDay(choosenDay time.Time) (storage.ListEvents, error) {
+func (s *Storage) ListEventsByDay(choosenDay time.Time) ([]model.Event, error) {
 	m := map[string]interface{}{"start_date": choosenDay.Day()}
 	listEvents, err := s.listEventsByQuery("select_day", m)
 	if err != nil {
@@ -137,7 +139,7 @@ func (s *Storage) ListEventsByDay(choosenDay time.Time) (storage.ListEvents, err
 	return listEvents, nil
 }
 
-func (s *Storage) ListEventsByWeek(choosenWeek time.Time) (storage.ListEvents, error) {
+func (s *Storage) ListEventsByWeek(choosenWeek time.Time) ([]model.Event, error) {
 	year, week := choosenWeek.ISOWeek()
 	param := map[string]interface{}{
 		"start_date_year": fmt.Sprint(year),
@@ -150,7 +152,7 @@ func (s *Storage) ListEventsByWeek(choosenWeek time.Time) (storage.ListEvents, e
 	return listEvents, nil
 }
 
-func (s *Storage) ListEventsByMonth(choosenMonth time.Time) (storage.ListEvents, error) {
+func (s *Storage) ListEventsByMonth(choosenMonth time.Time) ([]model.Event, error) {
 	m := map[string]interface{}{"start_date": choosenMonth.Month()}
 	listEvents, err := s.listEventsByQuery("select_month", m)
 	if err != nil {
@@ -159,7 +161,7 @@ func (s *Storage) ListEventsByMonth(choosenMonth time.Time) (storage.ListEvents,
 	return listEvents, nil
 }
 
-func (s *Storage) ListAllEvents() (storage.ListEvents, error) {
+func (s *Storage) ListAllEvents() ([]model.Event, error) {
 	listEvents, err := s.listEventsByQuery("select_all", nil)
 	if err != nil {
 		return nil, err
@@ -167,7 +169,7 @@ func (s *Storage) ListAllEvents() (storage.ListEvents, error) {
 	return listEvents, nil
 }
 
-func (s *Storage) ListUserEvents(u model.UserID) (storage.ListEvents, error) {
+func (s *Storage) ListUserEvents(u model.UserID) ([]model.Event, error) {
 	m := map[string]interface{}{"user_id": u}
 	listEvents, err := s.listEventsByQuery("select_user", m)
 	if err != nil {
@@ -176,8 +178,8 @@ func (s *Storage) ListUserEvents(u model.UserID) (storage.ListEvents, error) {
 	return listEvents, nil
 }
 
-func (s *Storage) listEventsByQuery(queryKey string, param interface{}) (storage.ListEvents, error) {
-	listEvents := make(storage.ListEvents, 0) //
+func (s *Storage) listEventsByQuery(queryKey string, param interface{}) ([]model.Event, error) {
+	listEvents := make([]model.Event, 0) //
 
 	var err error
 	var rows *sqlx.Rows

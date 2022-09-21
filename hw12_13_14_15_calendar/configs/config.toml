@@ -1,4 +1,6 @@
-bind_addr = ":8080"
+[http_server]
+host = "127.0.0.1"
+port = "5080"
 
 [logger]
 level = "INFO"

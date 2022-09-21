@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/model"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage"
 	_ "github.com/jackc/pgx/stdlib" // Postgres Driver.
 	"github.com/stretchr/testify/require"
@@ -99,20 +100,20 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 		list, err := store.ListAllEvents()
 		require.NoError(t, err)
-		require.Equal(t, storage.ListEvents{tmpEvent}, list)
+		require.Equal(t, []model.Event{tmpEvent}, list)
 
 		err = store.Create(storage.TestEvent)
 		require.Error(t, err)
 		list, err = store.ListAllEvents()
 		require.NoError(t, err)
-		require.Equal(t, storage.ListEvents{tmpEvent}, list)
+		require.Equal(t, []model.Event{tmpEvent}, list)
 
 		err = store.Create(storage.TestEvent2)
 		require.NoError(t, err)
 		store.Delete(storage.TestEvent.ID)
 		list, err = store.ListAllEvents()
 		require.NoError(t, err)
-		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2})
+		require.ElementsMatch(t, list, []model.Event{storage.TestEvent2})
 	})
 
 	t.Run("lists events in test db", func(t *testing.T) {
@@ -128,7 +129,7 @@ func TestStorage(t *testing.T) {
 
 		list, err := store.ListAllEvents()
 		require.NoError(t, err)
-		require.Equal(t, list, storage.ListEvents{storage.TestEvent})
+		require.Equal(t, list, []model.Event{storage.TestEvent})
 	})
 
 	t.Run("lists events in test db", func(t *testing.T) {
@@ -149,24 +150,24 @@ func TestStorage(t *testing.T) {
 		list, err := store.ListAllEvents()
 		require.NoError(t, err)
 		require.ElementsMatch(t, list,
-			storage.ListEvents{storage.TestEvent, storage.TestEvent2, storage.TestEvent3})
+			[]model.Event{storage.TestEvent, storage.TestEvent2, storage.TestEvent3})
 
 		date := time.Date(2022, time.September, 16, 1, 2, 3, 0, time.UTC)
 
 		list, err = store.ListEventsByDay(date)
 		require.NoError(t, err)
-		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent3})
+		require.ElementsMatch(t, list, []model.Event{storage.TestEvent2, storage.TestEvent3})
 
 		list, err = store.ListEventsByWeek(date)
 		require.NoError(t, err)
-		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent})
+		require.ElementsMatch(t, list, []model.Event{storage.TestEvent2, storage.TestEvent})
 
 		list, err = store.ListEventsByMonth(date)
 		require.NoError(t, err)
-		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent})
+		require.ElementsMatch(t, list, []model.Event{storage.TestEvent2, storage.TestEvent})
 
 		list, err = store.ListUserEvents(0)
 		require.NoError(t, err)
-		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent3, storage.TestEvent})
+		require.ElementsMatch(t, list, []model.Event{storage.TestEvent3, storage.TestEvent})
 	})
 }

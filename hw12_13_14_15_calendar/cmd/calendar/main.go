@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/app"
@@ -54,29 +55,23 @@ func main() {
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	_ = server
-	_ = ctx
+	go func() {
+		<-ctx.Done()
 
-	/*
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		defer cancel()
 
-
-		go func() {
-			<-ctx.Done()
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-			defer cancel()
-
-			if err := server.Stop(ctx); err != nil {
-				logg.Error("failed to stop http server: " + err.Error())
-			}
-		}()
-
-		logg.Info("calendar is running...")
-
-		if err := server.Start(ctx); err != nil {
-			logg.Error("failed to start http server: " + err.Error())
-			cancel()
-			os.Exit(1) //nolint:gocritic
+		if err := server.Stop(ctx); err != nil {
+			logg.Error("failed to stop http server: " + err.Error())
 		}
-	*/
+	}()
+
+	logg.Info("calendar is running...")
+
+	if err := server.Start(ctx); err != nil {
+		logg.Error("failed to start http server: " + err.Error())
+		cancel()
+		os.Exit(1) //nolint:gocritic
+	}
+
 }

@@ -54,8 +54,8 @@ func (s *Storage) Delete(eid model.EventID) {
 	s.mu.Unlock()
 }
 
-func (s *Storage) ListEventsByDay(choosenDay time.Time) (storage.ListEvents, error) {
-	listEvents := make(storage.ListEvents, 0) //
+func (s *Storage) ListEventsByDay(choosenDay time.Time) ([]model.Event, error) {
+	listEvents := make([]model.Event, 0) //
 	day := choosenDay.Day()
 	s.mu.RLock()
 	for _, val := range s.db {
@@ -67,8 +67,8 @@ func (s *Storage) ListEventsByDay(choosenDay time.Time) (storage.ListEvents, err
 	return listEvents, nil
 }
 
-func (s *Storage) ListEventsByWeek(choosenWeek time.Time) (storage.ListEvents, error) {
-	listEvents := make(storage.ListEvents, 0) //
+func (s *Storage) ListEventsByWeek(choosenWeek time.Time) ([]model.Event, error) {
+	listEvents := make([]model.Event, 0) //
 	year, week := choosenWeek.ISOWeek()
 	s.mu.RLock()
 	var vWeek, vYear int
@@ -82,8 +82,8 @@ func (s *Storage) ListEventsByWeek(choosenWeek time.Time) (storage.ListEvents, e
 	return listEvents, nil
 }
 
-func (s *Storage) ListEventsByMonth(choosenMonth time.Time) (storage.ListEvents, error) {
-	listEvents := make(storage.ListEvents, 0) //
+func (s *Storage) ListEventsByMonth(choosenMonth time.Time) ([]model.Event, error) {
+	listEvents := make([]model.Event, 0) //
 	month := choosenMonth.Month()
 	s.mu.RLock()
 	for _, val := range s.db {
@@ -95,8 +95,8 @@ func (s *Storage) ListEventsByMonth(choosenMonth time.Time) (storage.ListEvents,
 	return listEvents, nil
 }
 
-func (s *Storage) ListAllEvents() (storage.ListEvents, error) {
-	listEvents := make(storage.ListEvents, len(s.db))
+func (s *Storage) ListAllEvents() ([]model.Event, error) {
+	listEvents := make([]model.Event, len(s.db))
 	i := 0
 	for _, val := range s.db {
 		listEvents[i] = val
@@ -105,8 +105,8 @@ func (s *Storage) ListAllEvents() (storage.ListEvents, error) {
 	return listEvents, nil
 }
 
-func (s *Storage) ListUserEvents(userID model.UserID) (storage.ListEvents, error) {
-	listEvents := make(storage.ListEvents, 0) //
+func (s *Storage) ListUserEvents(userID model.UserID) ([]model.Event, error) {
+	listEvents := make([]model.Event, 0) //
 	s.mu.RLock()
 	for _, val := range s.db {
 		if val.UserID == userID {

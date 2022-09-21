@@ -3,9 +3,8 @@ package config
 type Config struct {
 	Storage    *StorageConf
 	Logger     *LoggerConf // Логирование
-	SessionKey string      `toml:"session_key"` // Ключ для генерации сессий
-	BindAddr   string      `toml:"bind_addr"`   // Адрес (порт), на котором запускаем веб сервер
-	// TODO
+	HTTPServer *HTTPServerConf
+	SessionKey string `toml:"session_key"` // Ключ для генерации сессий
 }
 
 type LoggerConf struct {
@@ -16,6 +15,11 @@ type LoggerConf struct {
 type StorageConf struct {
 	Type        string `toml:"type"`         // Тип хранилища "memory" или "sql"
 	DatabaseURL string `toml:"database_url"` // Адрес базы данных
+}
+
+type HTTPServerConf struct {
+	Host string `toml:"host"`
+	Port string `toml:"port"`
 }
 
 func NewConfig() *Config {

@@ -23,7 +23,7 @@ func TestStorage(t *testing.T) {
 
 		list, err := store.ListAllEvents()
 		require.NoError(t, err)
-		require.Equal(t, storage.ListEvents{storage.TestEvent}, list)
+		require.Equal(t, []model.Event{storage.TestEvent}, list)
 	})
 
 	t.Run("Update and delete event", func(t *testing.T) {
@@ -39,19 +39,19 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 		list, err := store.ListAllEvents()
 		require.NoError(t, err)
-		require.Equal(t, storage.ListEvents{tmpEvent}, list)
+		require.Equal(t, []model.Event{tmpEvent}, list)
 
 		err = store.Create(storage.TestEvent)
 		require.ErrorIs(t, err, storage.ErrorEventIDBusy)
 		list, err = store.ListAllEvents()
 		require.NoError(t, err)
-		require.Equal(t, storage.ListEvents{tmpEvent}, list)
+		require.Equal(t, []model.Event{tmpEvent}, list)
 
 		err = store.Create(storage.TestEvent2)
 		require.NoError(t, err)
 		list, err = store.ListAllEvents()
 		require.NoError(t, err)
-		require.ElementsMatch(t, list, storage.ListEvents{tmpEvent, storage.TestEvent2})
+		require.ElementsMatch(t, list, []model.Event{tmpEvent, storage.TestEvent2})
 	})
 
 	t.Run("check lists of events", func(t *testing.T) {
@@ -68,18 +68,18 @@ func TestStorage(t *testing.T) {
 
 		list, err := store.ListEventsByDay(date)
 		require.NoError(t, err)
-		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent3})
+		require.ElementsMatch(t, list, []model.Event{storage.TestEvent2, storage.TestEvent3})
 
 		list, err = store.ListEventsByWeek(date)
 		require.NoError(t, err)
-		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent})
+		require.ElementsMatch(t, list, []model.Event{storage.TestEvent2, storage.TestEvent})
 
 		list, err = store.ListEventsByMonth(date)
 		require.NoError(t, err)
-		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent2, storage.TestEvent})
+		require.ElementsMatch(t, list, []model.Event{storage.TestEvent2, storage.TestEvent})
 
 		list, err = store.ListUserEvents(0)
 		require.NoError(t, err)
-		require.ElementsMatch(t, list, storage.ListEvents{storage.TestEvent3, storage.TestEvent})
+		require.ElementsMatch(t, list, []model.Event{storage.TestEvent3, storage.TestEvent})
 	})
 }

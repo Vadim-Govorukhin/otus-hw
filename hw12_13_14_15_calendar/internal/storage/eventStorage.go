@@ -7,14 +7,14 @@ import (
 )
 
 type EventStorage interface {
-	Create(model.Event) error                        // Добавление события в хранилище
-	Update(model.EventID, model.Event) error         // Изменение события в хранилище
-	Delete(model.EventID)                            // Удаление события из хранилища
-	ListEventsByDay(time.Time) (ListEvents, error)   // Листинг событий на день
-	ListEventsByWeek(time.Time) (ListEvents, error)  // Листинг событий на неделю
-	ListEventsByMonth(time.Time) (ListEvents, error) // Листинг событий на день
-	ListAllEvents() (ListEvents, error)              // Листинг всех событий
-	ListUserEvents(model.UserID) (ListEvents, error) // Листинг всех событий юзера
+	Create(model.Event) error                           // Добавление события в хранилище
+	Update(model.EventID, model.Event) error            // Изменение события в хранилище
+	Delete(model.EventID)                               // Удаление события из хранилища
+	ListEventsByDay(time.Time) ([]model.Event, error)   // Листинг событий на день
+	ListEventsByWeek(time.Time) ([]model.Event, error)  // Листинг событий на неделю
+	ListEventsByMonth(time.Time) ([]model.Event, error) // Листинг событий на месяц
+	ListAllEvents() ([]model.Event, error)              // Листинг всех событий
+	ListUserEvents(model.UserID) ([]model.Event, error) // Листинг всех событий юзера
 }
 
 type Notification struct {
@@ -23,5 +23,3 @@ type Notification struct {
 	Date    time.Time     // Дата события
 	User    model.UserID  // Пользователь, которому отправлять
 }
-
-type ListEvents []model.Event
