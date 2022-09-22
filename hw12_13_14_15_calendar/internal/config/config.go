@@ -9,7 +9,7 @@ type Config struct {
 
 type LoggerConf struct {
 	Level string `toml:"level"` // Уровень логирования
-	// TODO
+	Path  string `toml:"path"`  // Путь до файла с логами
 }
 
 type StorageConf struct {
@@ -18,8 +18,9 @@ type StorageConf struct {
 }
 
 type HTTPServerConf struct {
-	Host string `toml:"host"`
-	Port string `toml:"port"`
+	Host    string `toml:"host"`
+	Port    string `toml:"port"`
+	LogPath string `toml:"log_path"`
 }
 
 func NewConfig() *Config {

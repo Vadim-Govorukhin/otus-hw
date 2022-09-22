@@ -2,7 +2,7 @@ package storage
 
 import "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/config"
 
-type Storage struct { // TODO
+type Storage struct {
 	Type        string // Тип хранилища "memory" или "sql"
 	DatabaseURL string // Адрес базы данных
 }

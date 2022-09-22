@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -40,18 +39,17 @@ func main() {
 	fmt.Printf("Read config: %+v\n", conf)
 
 	logg := logger.New(conf.Logger)
-	fmt.Printf("Create logger: %+v\n", logg)
+	logg.Infof("Create logger: %T\n", logg)
 
-	storage, err := basestorage.InitStorage(conf.Storage)
+	storage, err := basestorage.InitStorage(conf.Storage, logg)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	fmt.Printf("Create storage: %+v\n", storage)
+	logg.Infof("Create storage: %T\n", storage)
 
 	calendar := app.New(logg, storage)
-	server := internalhttp.NewServer(logg, calendar,
-		net.JoinHostPort(conf.HTTPServer.Host, conf.HTTPServer.Port))
+	server := internalhttp.NewServer(logg, calendar, conf.HTTPServer)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -75,5 +73,4 @@ func main() {
 		cancel()
 		os.Exit(1) //nolint:gocritic
 	}
-
 }

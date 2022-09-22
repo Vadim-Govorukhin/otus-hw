@@ -1,9 +1,11 @@
 [hTTPServer]
 host = "127.0.0.1"
 port = "5080"
+log_path = "\\logs\\server_log.json"
 
 [logger]
 level = "INFO"
+path = "\\logs\\log.json"
 
 [storage]
 type = "memory"

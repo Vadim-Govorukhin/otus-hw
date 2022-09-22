@@ -4,13 +4,18 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
 	jsontime "github.com/liamylian/jsontime/v2/v2"
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/app"
+	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/config"
+	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/model"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -22,13 +27,13 @@ type Server struct { // TODO
 	server *http.Server
 }
 
-type Logger interface { // TODO
-}
+func NewServer(logger *logger.Logger, app *app.App, conf *config.HTTPServerConf) *Server {
+	addres := net.JoinHostPort(conf.Host, conf.Port)
+	logPath := conf.LogPath
 
-func NewServer(logger Logger, app *app.App, addres string) *Server {
 	return &Server{server: &http.Server{
 		Addr:    addres,
-		Handler: createHandler(app),
+		Handler: createHandler(app, logPath),
 	}}
 }
 
@@ -48,7 +53,18 @@ func (s *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-func createHandler(calendar *app.App) http.Handler {
+func createHandler(calendar *app.App, logPath string) http.Handler {
+	curDir, err := os.Getwd()
+	if err != nil {
+		panic(fmt.Errorf("can't get working dir"))
+	}
+
+	logFile, err := os.OpenFile(filepath.Join(curDir, logPath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(fmt.Errorf("can't open log file"))
+	}
+	gin.DefaultWriter = io.MultiWriter(logFile, os.Stdout)
+
 	router := gin.Default()
 	calendarApp = calendar
 

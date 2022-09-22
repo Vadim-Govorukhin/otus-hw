@@ -11,26 +11,37 @@ import (
 
 type App struct {
 	storage storage.EventStorage
-	logger  *logger.Logger
+	log     *logger.Logger
 }
 
 func New(logger *logger.Logger, storage storage.EventStorage) *App {
-	return &App{logger: logger,
+	return &App{log: logger,
 		storage: storage}
 }
 
 func (a *App) Create(e model.Event) (uuid.UUID, error) {
+	a.log.Infof("create event %v", e)
 	if e.ID == uuid.Nil {
 		e.ID = uuid.New()
 	}
-	return e.ID, a.storage.Create(e)
+	err := a.storage.Create(e)
+	if err != nil {
+		a.log.Errorf("can't create event: %e", err)
+	}
+	return e.ID, err
 }
 
 func (a *App) Update(eid model.EventID, e model.Event) error {
-	return a.storage.Update(eid, e)
+	a.log.Infof("update event with id=%s by event %v", eid, e)
+	err := a.storage.Update(eid, e)
+	if err != nil {
+		a.log.Errorf("can't update event: %e", err)
+	}
+	return err
 }
 
 func (a *App) Delete(eid model.EventID) {
+	a.log.Infof("delete event with id=%s", eid)
 	a.storage.Delete(eid)
 }
 
