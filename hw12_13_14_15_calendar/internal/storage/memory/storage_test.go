@@ -30,9 +30,12 @@ func TestStorage(t *testing.T) {
 		fmt.Printf("====== start test %s =====\n", t.Name())
 		store := memorystorage.New(storageTempl)
 
-		store.Create(storage.TestEvent)
 		err := store.Update(storage.TestEvent.ID, model.Event{})
-		require.ErrorIs(t, err, storage.ErrorWrongUpdateID)
+		require.ErrorIs(t, err, storage.ErrorWrongID)
+
+		store.Create(storage.TestEvent)
+		err = store.Update(storage.TestEvent.ID, model.Event{})
+		require.NoError(t, err)
 
 		tmpEvent := model.Event{ID: storage.TestEvent.ID}
 		err = store.Update(storage.TestEvent.ID, tmpEvent)

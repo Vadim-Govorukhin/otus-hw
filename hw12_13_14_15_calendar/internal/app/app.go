@@ -6,6 +6,7 @@ import (
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/model"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage"
+	"github.com/google/uuid"
 )
 
 type App struct {
@@ -18,8 +19,11 @@ func New(logger *logger.Logger, storage storage.EventStorage) *App {
 		storage: storage}
 }
 
-func (a *App) Create(e model.Event) error {
-	return a.storage.Create(e)
+func (a *App) Create(e model.Event) (uuid.UUID, error) {
+	if e.ID == uuid.Nil {
+		e.ID = uuid.New()
+	}
+	return e.ID, a.storage.Create(e)
 }
 
 func (a *App) Update(eid model.EventID, e model.Event) error {

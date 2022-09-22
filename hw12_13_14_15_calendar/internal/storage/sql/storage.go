@@ -21,6 +21,7 @@ var requests = map[string]string{
 				(:event_id, :title, :start_date, :end_date, :descr, :user_id, :notify_user_time)
 				WHERE event_id=:event_id;`,
 	"delete":     `DELETE FROM events WHERE event_id=:eid;`,
+	"select_id":  `SELECT * FROM events WHERE event_id=:eid;`,
 	"select_day": `SELECT * FROM events WHERE EXTRACT(DAY FROM start_date) = :start_date;`,
 	"select_week": `SELECT * FROM events WHERE EXTRACT(WEEK FROM start_date) = :start_date_week AND
 					EXTRACT(YEAR FROM start_date) = :start_date_year;`,
@@ -101,10 +102,7 @@ func (s *Storage) Create(e model.Event) error {
 }
 
 func (s *Storage) Update(eid model.EventID, e model.Event) error {
-	if eid != e.ID {
-		fmt.Printf("Нельзя обновить событие с ID %s на событие с ID %s\n", eid, e.ID)
-		return storage.ErrorWrongUpdateID
-	}
+	e.ID = eid
 	query, ok := s.preparedQuery["update"]
 	if !ok {
 		fmt.Printf("prepared query not found")
@@ -128,6 +126,18 @@ func (s *Storage) Delete(eid model.EventID) {
 	if err != nil {
 		fmt.Printf("failed to delete event %#v: error %v", eid, err)
 	}
+}
+
+func (s *Storage) GetEventByid(eid model.EventID) (model.Event, error) {
+	m := map[string]interface{}{"eid": eid}
+	listEvents, err := s.listEventsByQuery("select_id", m)
+	if err != nil {
+		return model.Event{}, err
+	}
+	if len(listEvents) == 0 {
+		return model.Event{}, storage.ErrorWrongID
+	}
+	return listEvents[0], nil
 }
 
 func (s *Storage) ListEventsByDay(choosenDay time.Time) ([]model.Event, error) {

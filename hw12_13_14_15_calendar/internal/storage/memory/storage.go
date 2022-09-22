@@ -40,10 +40,12 @@ func (s *Storage) Create(e model.Event) (err error) {
 func (s *Storage) Update(eid model.EventID, e model.Event) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if eid != e.ID {
-		fmt.Printf("Нельзя обновить событие с ID %s на событие с ID %s\n", eid, e.ID)
-		return storage.ErrorWrongUpdateID
+	_, ok := s.db[eid]
+	if !ok {
+		fmt.Printf("Не удалось обновить событие с ID=%s\n", eid)
+		return storage.ErrorWrongID
 	}
+	e.ID = eid
 	s.db[eid] = e
 	return
 }

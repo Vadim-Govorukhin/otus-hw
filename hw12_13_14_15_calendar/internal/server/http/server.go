@@ -3,19 +3,17 @@ package internalhttp
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
+
+	jsontime "github.com/liamylian/jsontime/v2/v2"
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/app"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/model"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-)
-
-var (
-	statusOK          = http.StatusOK
-	statusServerError = http.StatusInternalServerError
 )
 
 var calendarApp *app.App
@@ -35,6 +33,7 @@ func NewServer(logger Logger, app *app.App, addres string) *Server {
 }
 
 func (s *Server) Start(ctx context.Context) error {
+	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02 15:04:05")
 	err := s.server.ListenAndServe()
 	if err == http.ErrServerClosed {
 		return nil
@@ -66,45 +65,118 @@ func createHandler(calendar *app.App) http.Handler {
 
 func createEventHandler(c *gin.Context) {
 	fmt.Println("[server] createEventHandler")
+	var json = jsontime.ConfigWithCustomTimeFormat
 
-	type RequestEvent struct {
-		ID             model.EventID `json:"event_id,omitempty"`
-		Title          string        `json:"title"`
-		StartDate      time.Time     `json:"start_date"`
-		EndDate        time.Time     `json:"end_date"`
-		Description    string        `json:"descr,omitempty"`
-		UserID         model.UserID  `json:"user_id"`
-		NotifyUserTime float64       `json:"notify_user_time,omitempty"`
-	}
-
-	var rev RequestEvent
-	if err := c.ShouldBindJSON(&rev); err != nil {
+	jsonData, err := io.ReadAll(c.Request.Body)
+	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 	}
 
-	rev.ID = uuid.New()
-	id := calendarApp.Create(model.Event{})
+	var e model.Event
+	err = json.Unmarshal(jsonData, &e)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	id, err := calendarApp.Create(e)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"Id": id})
 }
 
 func updateEventHandler(c *gin.Context) {
 	fmt.Println("[server] updateEventHandler")
-	// TODO
+	var json = jsontime.ConfigWithCustomTimeFormat
+
+	id, err := uuid.Parse(c.Params.ByName("id"))
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	jsonData, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+	}
+
+	var e model.Event
+	err = json.Unmarshal(jsonData, &e)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = calendarApp.Update(id, e)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"Id": id})
 }
 
 func deleteEventHandler(c *gin.Context) {
 	fmt.Println("[server] deleteEventHandler")
-	// TODO
+
+	id, err := uuid.Parse(c.Params.ByName("id"))
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	calendarApp.Delete(id)
+
+	c.JSON(http.StatusOK, "deleted")
 }
 
 func dueDayHandler(c *gin.Context) {
 	fmt.Println("[server] dueDayHandler")
-	// TODO
+	params := []string{"day", "month", "year"}
+
+	m := make(map[string]int)
+	for _, d := range params {
+		val, err := strconv.Atoi(c.Params.ByName(d))
+		if err != nil {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
+		m[d] = val
+	}
+	date := time.Date(m["year"], time.Month(m["month"]), m["day"], 1, 2, 3, 0, time.Local)
+
+	events, err := calendarApp.ListEventsByDay(date)
+	if err != nil {
+		c.String(http.StatusNotFound, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, events)
 }
 
 func dueMonthHandler(c *gin.Context) {
 	fmt.Println("[server] dueMonthHandler")
-	// TODO
+	params := []string{"month", "year"}
+
+	m := make(map[string]int)
+	for _, d := range params {
+		val, err := strconv.Atoi(c.Params.ByName(d))
+		if err != nil {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
+		m[d] = val
+	}
+	date := time.Date(m["year"], time.Month(m["month"]), m["day"], 1, 2, 3, 0, time.Local)
+
+	events, err := calendarApp.ListEventsByDay(date)
+	if err != nil {
+		c.String(http.StatusNotFound, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, events)
 }
 
 func getAllEventsHandler(c *gin.Context) {
@@ -112,11 +184,11 @@ func getAllEventsHandler(c *gin.Context) {
 
 	allEvents, err := calendarApp.ListAllEvents()
 	if err != nil {
-		//c.String(http.StatusBadRequest, err.Error())
-		c.Writer.WriteHeader(statusServerError)
+		c.String(http.StatusBadRequest, err.Error())
+		//c.Writer.WriteHeader(statusServerError)
 		return
 	}
-	c.JSON(statusOK, allEvents)
+	c.JSON(http.StatusOK, allEvents)
 }
 
 func getAllUserEventsHandler(c *gin.Context) {

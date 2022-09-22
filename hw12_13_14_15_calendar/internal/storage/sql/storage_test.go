@@ -82,6 +82,25 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("get by id test db", func(t *testing.T) {
+		store := setupTest(t)
+		defer func() {
+			err := teardown(store, []string{"events"})
+			require.NoError(t, err)
+			store.Close(context.Background())
+		}()
+
+		_, err := store.GetEventByid(storage.TestEvent.ID)
+		require.ErrorIs(t, err, storage.ErrorWrongID)
+
+		err = store.Create(storage.TestEvent)
+		require.NoError(t, err)
+
+		e, err := store.GetEventByid(storage.TestEvent.ID)
+		require.NoError(t, err)
+		require.Equal(t, storage.TestEvent, e)
+	})
+
 	t.Run("Update and delete event", func(t *testing.T) {
 		store := setupTest(t)
 		defer func() {
@@ -93,7 +112,7 @@ func TestStorage(t *testing.T) {
 		store.Create(storage.TestEvent)
 		tmpEvent := storage.TestEvent3
 		err := store.Update(storage.TestEvent.ID, tmpEvent)
-		require.ErrorIs(t, err, storage.ErrorWrongUpdateID)
+		require.NoError(t, err)
 
 		tmpEvent.ID = storage.TestEvent.ID
 		err = store.Update(storage.TestEvent.ID, tmpEvent)

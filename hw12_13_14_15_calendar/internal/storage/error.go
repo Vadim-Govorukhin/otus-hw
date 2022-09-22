@@ -11,7 +11,7 @@ var (
 	ErrorPreparedQueryNotFound = errors.New("prepared query not found")
 
 	// Event Errors.
-	ErrorDayBusy       = errors.New("данное время уже занято другим событием")
-	ErrorEventIDBusy   = errors.New("cобытие с таким id уже существует")
-	ErrorWrongUpdateID = errors.New("обновление события с изменением ID")
+	ErrorDayBusy     = errors.New("данное время уже занято другим событием")
+	ErrorEventIDBusy = errors.New("cобытие с таким id уже существует")
+	ErrorWrongID     = errors.New("cобытие с таким id не существует")
 )
