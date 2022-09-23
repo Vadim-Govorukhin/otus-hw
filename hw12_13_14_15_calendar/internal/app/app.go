@@ -15,8 +15,10 @@ type App struct {
 }
 
 func New(logger *logger.Logger, storage storage.EventStorage) *App {
-	return &App{log: logger,
-		storage: storage}
+	return &App{
+		log:     logger,
+		storage: storage,
+	}
 }
 
 func (a *App) Create(e model.Event) (uuid.UUID, error) {

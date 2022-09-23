@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	//nolint:gci
 	// Postgres Driver.
 	_ "github.com/jackc/pgx/stdlib"
 
@@ -62,7 +63,7 @@ func (s *Storage) PreparedQueries(ctx context.Context) error {
 	for key, val := range requests {
 		stmt, err := s.db.PrepareNamed(val) // *sqlx.NamedStmt
 		if err != nil {
-			return fmt.Errorf("failed to prepare %s query '%v'\n error: %v", key, val, err)
+			return fmt.Errorf("failed to prepare %s query '%v'\n error: %w", key, val, err)
 		}
 		s.preparedQuery[key] = stmt
 	}
@@ -74,12 +75,12 @@ func (s *Storage) Close(ctx context.Context) error {
 	for key, val := range s.preparedQuery {
 		err = val.Close()
 		if err != nil {
-			return fmt.Errorf("failed to close prepared '%s' statement with err: %v", key, err)
+			return fmt.Errorf("failed to close prepared '%s' statement with err: %w", key, err)
 		}
 	}
 	err = s.db.Close()
 	if err != nil {
-		return fmt.Errorf("failed to close db with err: %v", err)
+		return fmt.Errorf("failed to close db with err: %w", err)
 	}
 	return nil
 }
@@ -202,7 +203,7 @@ func (s *Storage) listEventsByQuery(queryKey string, param interface{}) ([]model
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to select events by '%v' with param %v: error %v", queryKey, param, err)
+		return nil, fmt.Errorf("failed to select events by '%v' with param %v: error %w", queryKey, param, err)
 	}
 	defer rows.Close()
 

@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	//nolint:gci
 	jsontime "github.com/liamylian/jsontime/v2/v2"
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/app"
@@ -28,11 +29,11 @@ type Server struct { // TODO
 }
 
 func NewServer(logger *logger.Logger, app *app.App, conf *config.HTTPServerConf) *Server {
-	addres := net.JoinHostPort(conf.Host, conf.Port)
+	address := net.JoinHostPort(conf.Host, conf.Port)
 	logPath := conf.LogPath
 
 	return &Server{server: &http.Server{
-		Addr:    addres,
+		Addr:    address,
 		Handler: createHandler(app, logPath),
 	}}
 }
@@ -60,7 +61,7 @@ func createHandler(calendar *app.App, logPath string) http.Handler {
 		panic(fmt.Errorf("can't get working dir"))
 	}
 
-	logFile, err := os.OpenFile(filepath.Join(curDir, logPath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	logFile, err := os.OpenFile(filepath.Join(curDir, logPath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		panic(fmt.Errorf("can't open log file"))
 	}
@@ -70,7 +71,7 @@ func createHandler(calendar *app.App, logPath string) http.Handler {
 	calendarApp = calendar
 
 	router.POST("/event/", createEventHandler) // Create
-	//router.GET("/event/:id", getEventHandler)
+	// router.GET("/event/:id", getEventHandler)
 	router.PUT("/event/:id", updateEventHandler)        // Update
 	router.DELETE("/event/:id", deleteEventHandler)     // Delete
 	router.GET("/due/:year/:month/:day", dueDayHandler) // ListEventsByDay
@@ -82,7 +83,7 @@ func createHandler(calendar *app.App, logPath string) http.Handler {
 
 func createEventHandler(c *gin.Context) {
 	fmt.Println("[server] createEventHandler")
-	var json = jsontime.ConfigWithCustomTimeFormat
+	json := jsontime.ConfigWithCustomTimeFormat
 
 	jsonData, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -106,7 +107,7 @@ func createEventHandler(c *gin.Context) {
 
 func updateEventHandler(c *gin.Context) {
 	fmt.Println("[server] updateEventHandler")
-	var json = jsontime.ConfigWithCustomTimeFormat
+	json := jsontime.ConfigWithCustomTimeFormat
 
 	id, err := uuid.Parse(c.Params.ByName("id"))
 	if err != nil {
@@ -202,7 +203,7 @@ func getAllEventsHandler(c *gin.Context) {
 	allEvents, err := calendarApp.ListAllEvents()
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
-		//c.Writer.WriteHeader(statusServerError)
+		// c.Writer.WriteHeader(statusServerError)
 		return
 	}
 	c.JSON(http.StatusOK, allEvents)

@@ -42,8 +42,7 @@ func (s *Storage) Close(ctx context.Context) error {
 func (s *Storage) Update(eid model.EventID, e model.Event) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	_, ok := s.db[eid]
-	if !ok {
+	if _, ok := s.db[eid]; !ok {
 		return storage.ErrorWrongID
 	}
 	e.ID = eid

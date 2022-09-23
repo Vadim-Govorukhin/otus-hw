@@ -30,7 +30,7 @@ func New(loggerConf *config.LoggerConf) *Logger {
 	consoleEncoder := zapcore.NewConsoleEncoder(config)
 
 	logPath := filepath.Join(curDir, loggerConf.Path)
-	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	logFile, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		panic(fmt.Errorf("can't open log file"))
 	}
