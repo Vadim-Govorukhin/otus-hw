@@ -62,7 +62,10 @@ func main() {
 		defer cancel()
 
 		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server: " + err.Error())
+			logg.Errorf("failed to stop http server: %s", err.Error())
+		}
+		if err := storage.Close(ctx); err != nil {
+			logg.Errorf("failed to close storage: %s", err.Error())
 		}
 	}()
 

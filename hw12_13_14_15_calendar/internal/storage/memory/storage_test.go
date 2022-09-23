@@ -24,6 +24,14 @@ func TestStorage(t *testing.T) {
 		list, err := store.ListAllEvents()
 		require.NoError(t, err)
 		require.Equal(t, []model.Event{storage.TestEvent}, list)
+
+		event, err := store.GetEventByid(storage.TestEvent.ID)
+		require.NoError(t, err)
+		require.Equal(t, storage.TestEvent, event)
+
+		event, err = store.GetEventByid(storage.TestEvent2.ID)
+		require.ErrorIs(t, err, storage.ErrorWrongID)
+		require.Equal(t, model.Event{}, event)
 	})
 
 	t.Run("Update and delete event", func(t *testing.T) {
@@ -34,9 +42,6 @@ func TestStorage(t *testing.T) {
 		require.ErrorIs(t, err, storage.ErrorWrongID)
 
 		store.Create(storage.TestEvent)
-		err = store.Update(storage.TestEvent.ID, model.Event{})
-		require.NoError(t, err)
-
 		tmpEvent := model.Event{ID: storage.TestEvent.ID}
 		err = store.Update(storage.TestEvent.ID, tmpEvent)
 		require.NoError(t, err)
@@ -52,9 +57,10 @@ func TestStorage(t *testing.T) {
 
 		err = store.Create(storage.TestEvent2)
 		require.NoError(t, err)
+		store.Delete(tmpEvent.ID)
 		list, err = store.ListAllEvents()
 		require.NoError(t, err)
-		require.ElementsMatch(t, list, []model.Event{tmpEvent, storage.TestEvent2})
+		require.ElementsMatch(t, list, []model.Event{storage.TestEvent2})
 	})
 
 	t.Run("check lists of events", func(t *testing.T) {

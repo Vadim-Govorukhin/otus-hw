@@ -50,6 +50,7 @@ func (s *Server) Stop(ctx context.Context) error {
 	if err := s.server.Shutdown(ctx); err != nil {
 		return err
 	}
+
 	return nil
 }
 

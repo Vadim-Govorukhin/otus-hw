@@ -30,7 +30,7 @@ var requests = map[string]string{
 	"select_user":  `SELECT * FROM events WHERE user_id = :user_id;`,
 }
 
-type Storage struct { // TODO
+type Storage struct {
 	config        *storage.Storage
 	db            *sqlx.DB
 	preparedQuery map[string]*sqlx.NamedStmt
@@ -39,7 +39,6 @@ type Storage struct { // TODO
 var _ storage.EventStorage = New(nil)
 
 func New(config *storage.Storage) *Storage {
-	fmt.Println("Create SQL Storage")
 	return &Storage{
 		config:        config,
 		preparedQuery: make(map[string]*sqlx.NamedStmt),
@@ -49,13 +48,11 @@ func New(config *storage.Storage) *Storage {
 func (s *Storage) Connect(ctx context.Context) error {
 	db, err := sqlx.Open("pgx", s.config.DatabaseURL)
 	if err != nil {
-		fmt.Printf("failed to load driver: %v\n", err)
-		return ErrorLoadDriver
+		return err
 	}
 
 	if err := db.Ping(); err != nil {
-		fmt.Printf("failed to connect to db: %v\n", err)
-		return ErrorConnectDB
+		return err
 	}
 	s.db = db
 	return nil
@@ -65,26 +62,26 @@ func (s *Storage) PreparedQueries(ctx context.Context) error {
 	for key, val := range requests {
 		stmt, err := s.db.PrepareNamed(val) // *sqlx.NamedStmt
 		if err != nil {
-			fmt.Printf("failed to prepare %s query '%v'\n error: %v", key, val, err)
-			return err
+			return fmt.Errorf("failed to prepare %s query '%v'\n error: %v", key, val, err)
 		}
 		s.preparedQuery[key] = stmt
 	}
 	return nil
 }
 
-func (s *Storage) Close(ctx context.Context) {
+func (s *Storage) Close(ctx context.Context) error {
 	var err error
 	for key, val := range s.preparedQuery {
 		err = val.Close()
 		if err != nil {
-			fmt.Printf("failed to close prepared '%s' statement with err: %v", key, err)
+			return fmt.Errorf("failed to close prepared '%s' statement with err: %v", key, err)
 		}
 	}
 	err = s.db.Close()
 	if err != nil {
-		fmt.Printf("failed to close db with err: %v", err)
+		return fmt.Errorf("failed to close db with err: %v", err)
 	}
+	return nil
 }
 
 func (s *Storage) Create(e model.Event) error {

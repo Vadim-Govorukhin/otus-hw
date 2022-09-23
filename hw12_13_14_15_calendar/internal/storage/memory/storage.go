@@ -1,7 +1,7 @@
 package memorystorage
 
 import (
-	"fmt"
+	"context"
 	"sync"
 	"time"
 
@@ -18,7 +18,6 @@ type Storage struct {
 }
 
 func New(config *storage.Storage) *Storage {
-	fmt.Println("Create memory Storage")
 	return &Storage{
 		config: config,
 		db:     make(map[model.EventID]model.Event, 0),
@@ -28,13 +27,16 @@ func New(config *storage.Storage) *Storage {
 func (s *Storage) Create(e model.Event) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	fmt.Printf("Добавляем событие с id=%s\n", e.ID)
 	if _, ok := s.db[e.ID]; ok {
-		fmt.Printf("Не удалось добавить событие с ID=%s\n", e.ID)
 		return storage.ErrorEventIDBusy
 	}
 	s.db[e.ID] = e
 	return
+}
+
+func (s *Storage) Close(ctx context.Context) error {
+	// TODO?
+	return nil
 }
 
 func (s *Storage) Update(eid model.EventID, e model.Event) (err error) {
@@ -42,7 +44,6 @@ func (s *Storage) Update(eid model.EventID, e model.Event) (err error) {
 	defer s.mu.Unlock()
 	_, ok := s.db[eid]
 	if !ok {
-		fmt.Printf("Не удалось обновить событие с ID=%s\n", eid)
 		return storage.ErrorWrongID
 	}
 	e.ID = eid
@@ -54,6 +55,16 @@ func (s *Storage) Delete(eid model.EventID) {
 	s.mu.Lock()
 	delete(s.db, eid)
 	s.mu.Unlock()
+}
+
+func (s *Storage) GetEventByid(eid model.EventID) (model.Event, error) {
+	s.mu.RLock()
+	event, ok := s.db[eid]
+	s.mu.RUnlock()
+	if !ok {
+		return event, storage.ErrorWrongID
+	}
+	return event, nil
 }
 
 func (s *Storage) ListEventsByDay(choosenDay time.Time) ([]model.Event, error) {
