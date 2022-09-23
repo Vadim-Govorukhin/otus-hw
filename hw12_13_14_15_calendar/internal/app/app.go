@@ -22,10 +22,10 @@ func New(logger *logger.Logger, storage storage.EventStorage) *App {
 }
 
 func (a *App) Create(e model.Event) (uuid.UUID, error) {
-	a.log.Infof("create event %v", e)
 	if e.ID == uuid.Nil {
 		e.ID = uuid.New()
 	}
+	a.log.Infof("create event %v", e)
 	err := a.storage.Create(e)
 	if err != nil {
 		a.log.Errorf("can't create event: %e", err)
@@ -45,6 +45,15 @@ func (a *App) Update(eid model.EventID, e model.Event) error {
 func (a *App) Delete(eid model.EventID) {
 	a.log.Infof("delete event with id=%s", eid)
 	a.storage.Delete(eid)
+}
+
+func (a *App) GetEventByid(eid model.EventID) (model.Event, error) {
+	a.log.Infof("get event by id=%s", eid)
+	event, err := a.storage.GetEventByid(eid)
+	if err != nil {
+		a.log.Errorf("can't get event: %s", err)
+	}
+	return event, err
 }
 
 func (a *App) ListEventsByDay(date time.Time) ([]model.Event, error) {

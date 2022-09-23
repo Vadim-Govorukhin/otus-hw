@@ -2,7 +2,6 @@ package internalhttp
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	//nolint:gci
+	ginzap "github.com/akath19/gin-zap"
 	jsontime "github.com/liamylian/jsontime/v2/v2"
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/app"
@@ -34,7 +34,7 @@ func NewServer(logger *logger.Logger, app *app.App, conf *config.HTTPServerConf)
 
 	return &Server{server: &http.Server{
 		Addr:    address,
-		Handler: createHandler(app, logPath),
+		Handler: createHandler(app, logPath, logger),
 	}}
 }
 
@@ -55,25 +55,27 @@ func (s *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-func createHandler(calendar *app.App, logPath string) http.Handler {
+func createHandler(calendar *app.App, logPath string, logg *logger.Logger) http.Handler {
 	curDir, err := os.Getwd()
 	if err != nil {
-		panic(fmt.Errorf("can't get working dir"))
+		logg.DPanicf("can't get working dir %w", err)
 	}
 
 	logFile, err := os.OpenFile(filepath.Join(curDir, logPath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
-		panic(fmt.Errorf("can't open log file"))
+		logg.DPanicf("can't open log file %w", err)
 	}
 	gin.DefaultWriter = io.MultiWriter(logFile, os.Stdout)
 
 	router := gin.Default()
+	router.Use(ginzap.Logger(3*time.Second, logg.Desugar()))
+
 	calendarApp = calendar
 
-	router.POST("/event/", createEventHandler) // Create
-	// router.GET("/event/:id", getEventHandler)
+	router.POST("/event/", createEventHandler)          // Create
 	router.PUT("/event/:id", updateEventHandler)        // Update
 	router.DELETE("/event/:id", deleteEventHandler)     // Delete
+	router.GET("/event/:id", getEventHandler)           // GetEventByid
 	router.GET("/due/:year/:month/:day", dueDayHandler) // ListEventsByDay
 	router.GET("/due/:year/:month", dueMonthHandler)    // ListEventsByMonth
 	router.GET("/event/", getAllEventsHandler)          // ListAllEvents
@@ -82,7 +84,6 @@ func createHandler(calendar *app.App, logPath string) http.Handler {
 }
 
 func createEventHandler(c *gin.Context) {
-	fmt.Println("[server] createEventHandler")
 	json := jsontime.ConfigWithCustomTimeFormat
 
 	jsonData, err := io.ReadAll(c.Request.Body)
@@ -106,7 +107,6 @@ func createEventHandler(c *gin.Context) {
 }
 
 func updateEventHandler(c *gin.Context) {
-	fmt.Println("[server] updateEventHandler")
 	json := jsontime.ConfigWithCustomTimeFormat
 
 	id, err := uuid.Parse(c.Params.ByName("id"))
@@ -136,8 +136,6 @@ func updateEventHandler(c *gin.Context) {
 }
 
 func deleteEventHandler(c *gin.Context) {
-	fmt.Println("[server] deleteEventHandler")
-
 	id, err := uuid.Parse(c.Params.ByName("id"))
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
@@ -149,8 +147,23 @@ func deleteEventHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, "deleted")
 }
 
+func getEventHandler(c *gin.Context) {
+	id, err := uuid.Parse(c.Params.ByName("id"))
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	event, err := calendarApp.GetEventByid(id)
+	if err != nil {
+		c.String(http.StatusNotFound, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, event)
+}
+
 func dueDayHandler(c *gin.Context) {
-	fmt.Println("[server] dueDayHandler")
 	params := []string{"day", "month", "year"}
 
 	m := make(map[string]int)
@@ -174,7 +187,6 @@ func dueDayHandler(c *gin.Context) {
 }
 
 func dueMonthHandler(c *gin.Context) {
-	fmt.Println("[server] dueMonthHandler")
 	params := []string{"month", "year"}
 
 	m := make(map[string]int)
@@ -198,8 +210,6 @@ func dueMonthHandler(c *gin.Context) {
 }
 
 func getAllEventsHandler(c *gin.Context) {
-	fmt.Println("[server] getAllEventsHandler")
-
 	allEvents, err := calendarApp.ListAllEvents()
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
@@ -210,8 +220,6 @@ func getAllEventsHandler(c *gin.Context) {
 }
 
 func getAllUserEventsHandler(c *gin.Context) {
-	fmt.Println("[server] getAllUserEventsHandler")
-
 	id, err := strconv.Atoi(c.Params.ByName("uid"))
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())

@@ -4,11 +4,13 @@ go 1.16
 
 require (
 	github.com/BurntSushi/toml v1.2.0
+	github.com/akath19/gin-zap v0.0.0-20180806194049-1d9e5171c53e
 	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-playground/validator/v10 v10.11.1 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/gofrs/uuid v4.3.0+incompatible // indirect
+	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/jackc/fake v0.0.0-20150926172116-812a484cc733 // indirect
 	github.com/jackc/pgx v3.6.2+incompatible
