@@ -129,7 +129,8 @@ func TestStorage(t *testing.T) {
 
 		err = store.Create(storage.TestEvent2)
 		require.NoError(t, err)
-		store.Delete(storage.TestEvent.ID)
+		err = store.Delete(storage.TestEvent.ID)
+		require.NoError(t, err)
 		list, err = store.ListAllEvents()
 		require.NoError(t, err)
 		require.ElementsMatch(t, list, []model.Event{storage.TestEvent2})

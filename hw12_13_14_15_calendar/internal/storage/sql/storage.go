@@ -113,16 +113,14 @@ func (s *Storage) Update(eid model.EventID, e model.Event) error {
 	return nil
 }
 
-func (s *Storage) Delete(eid model.EventID) {
+func (s *Storage) Delete(eid model.EventID) error {
 	m := map[string]interface{}{"eid": eid}
 	query, ok := s.preparedQuery["delete"]
 	if !ok {
-		fmt.Printf("prepared query not found")
+		return storage.ErrorPreparedQueryNotFound
 	}
 	_, err := query.Exec(m)
-	if err != nil {
-		fmt.Printf("failed to delete event %#v: error %v", eid, err)
-	}
+	return err
 }
 
 func (s *Storage) GetEventByid(eid model.EventID) (model.Event, error) {
@@ -194,7 +192,6 @@ func (s *Storage) listEventsByQuery(queryKey string, param interface{}) ([]model
 	if param != nil {
 		query, ok := s.preparedQuery[queryKey]
 		if !ok {
-			fmt.Printf("prepared query not found")
 			return nil, storage.ErrorPreparedQueryNotFound
 		}
 
@@ -205,8 +202,7 @@ func (s *Storage) listEventsByQuery(queryKey string, param interface{}) ([]model
 	}
 
 	if err != nil {
-		fmt.Printf("failed to select events by '%v' with param %v: error %v", queryKey, param, err)
-		return nil, err
+		return nil, fmt.Errorf("failed to select events by '%v' with param %v: error %v", queryKey, param, err)
 	}
 	defer rows.Close()
 

@@ -51,10 +51,11 @@ func (s *Storage) Update(eid model.EventID, e model.Event) (err error) {
 	return
 }
 
-func (s *Storage) Delete(eid model.EventID) {
+func (s *Storage) Delete(eid model.EventID) error {
 	s.mu.Lock()
 	delete(s.db, eid)
 	s.mu.Unlock()
+	return nil
 }
 
 func (s *Storage) GetEventByid(eid model.EventID) (model.Event, error) {
