@@ -28,16 +28,6 @@ type Server struct { // TODO
 	server *http.Server
 }
 
-func NewServer(logger *logger.Logger, app *app.App, conf *config.HTTPServerConf) *Server {
-	address := net.JoinHostPort(conf.Host, conf.Port)
-	logPath := conf.LogPath
-
-	return &Server{server: &http.Server{
-		Addr:    address,
-		Handler: createHandler(app, logPath, logger),
-	}}
-}
-
 func (s *Server) Start(ctx context.Context) error {
 	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02 15:04:05")
 	err := s.server.ListenAndServe()
@@ -51,24 +41,40 @@ func (s *Server) Stop(ctx context.Context) error {
 	if err := s.server.Shutdown(ctx); err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func createHandler(calendar *app.App, logPath string, logg *logger.Logger) http.Handler {
+func configureLoggerGin(logg *logger.Logger, logPath string) gin.HandlerFunc {
 	curDir, err := os.Getwd()
 	if err != nil {
 		logg.DPanicf("can't get working dir %w", err)
 	}
 
-	logFile, err := os.OpenFile(filepath.Join(curDir, logPath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	logFile, err := os.OpenFile(filepath.Join(curDir, logPath),
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		logg.DPanicf("can't open log file %w", err)
 	}
 	gin.DefaultWriter = io.MultiWriter(logFile, os.Stdout)
 
+	ginLogg := ginzap.Logger(3*time.Second, logg.Desugar())
+	return ginLogg
+}
+
+func NewServer(logg *logger.Logger, app *app.App, conf *config.HTTPServerConf) *Server {
+	address := net.JoinHostPort(conf.Host, conf.Port)
+	ginLogg := configureLoggerGin(logg, conf.LogPath)
+
+	return &Server{server: &http.Server{
+		Addr:    address,
+		Handler: CreateHandler(app, ginLogg),
+	}}
+}
+
+func CreateHandler(calendar *app.App, ginLogg gin.HandlerFunc) http.Handler {
+
 	router := gin.Default()
-	router.Use(ginzap.Logger(3*time.Second, logg.Desugar()))
+	router.Use(ginLogg)
 
 	calendarApp = calendar
 
