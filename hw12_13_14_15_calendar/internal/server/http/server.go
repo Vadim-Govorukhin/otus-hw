@@ -213,7 +213,6 @@ func getAllEventsHandler(c *gin.Context) {
 	allEvents, err := calendarApp.ListAllEvents()
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
-		// c.Writer.WriteHeader(statusServerError)
 		return
 	}
 	c.JSON(http.StatusOK, allEvents)
