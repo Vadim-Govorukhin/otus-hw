@@ -39,9 +39,10 @@ var (
 )
 
 var (
-	TestEventJson  []byte
-	TestEvent2Json []byte
-	TestEvent3Json []byte
+	TestEventJson        []byte
+	TestEvent2Json       []byte
+	TestEvent3Json       []byte
+	TestEventJsonUpdated []byte
 )
 
 type TestEventIDRespose struct {
@@ -58,6 +59,10 @@ func init() {
 	TestEventJson, _ = json.Marshal(TestEvent)
 	TestEvent2Json, _ = json.Marshal(TestEvent2)
 	TestEvent3Json, _ = json.Marshal(TestEvent3)
+
+	tmpEvent := TestEvent2
+	tmpEvent.ID = TestEvent.ID
+	TestEventJsonUpdated, _ = json.Marshal(tmpEvent)
 
 	TestEventID := TestEventIDRespose{
 		ID: TestEvent.ID,

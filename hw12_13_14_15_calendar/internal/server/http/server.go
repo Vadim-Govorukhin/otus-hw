@@ -24,7 +24,7 @@ import (
 
 var calendarApp *app.App
 
-type Server struct { // TODO
+type Server struct {
 	server *http.Server
 }
 
@@ -71,11 +71,10 @@ func NewServer(logg *logger.Logger, app *app.App, conf *config.HTTPServerConf) *
 }
 
 func CreateHandler(calendar *app.App, ginLogg gin.HandlerFunc) http.Handler {
+	calendarApp = calendar
 
 	router := gin.Default()
 	router.Use(ginLogg)
-
-	calendarApp = calendar
 
 	router.POST("/event/", createEventHandler)          // Create
 	router.PUT("/event/:id", updateEventHandler)        // Update
