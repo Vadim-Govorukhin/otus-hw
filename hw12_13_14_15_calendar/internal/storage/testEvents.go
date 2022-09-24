@@ -1,11 +1,11 @@
 package storage
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/model"
 	"github.com/google/uuid"
-	jsontime "github.com/liamylian/jsontime/v2/v2"
 )
 
 var (
@@ -55,9 +55,6 @@ var (
 )
 
 func init() {
-	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02 15:04:05")
-	json := jsontime.ConfigWithCustomTimeFormat
-
 	TestEventJson, _ = json.Marshal(TestEvent)
 	TestEvent2Json, _ = json.Marshal(TestEvent2)
 	TestEvent3Json, _ = json.Marshal(TestEvent3)

@@ -2,7 +2,6 @@ package internalhttp_test
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -82,6 +81,33 @@ func TestHandler(t *testing.T) {
 				string(storage.TestEvent3Json)}, "},{")},
 			statusCode: []int{http.StatusOK},
 		},
+		{
+			name:        "get list of events by day",
+			method:      []string{http.MethodGet},
+			url:         []string{"/due/2022/9/16"},
+			requestBody: []io.Reader{nil},
+			wantBody: []string{strings.Join([]string{string(storage.TestEvent2Json),
+				string(storage.TestEvent3Json)}, "},{")},
+			statusCode: []int{http.StatusOK},
+		},
+		{
+			name:        "get list of events by month",
+			method:      []string{http.MethodGet},
+			url:         []string{"/due/2022/9"},
+			requestBody: []io.Reader{nil},
+			wantBody: []string{strings.Join([]string{string(storage.TestEvent2Json),
+				string(storage.TestEventJson)}, "},{")},
+			statusCode: []int{http.StatusOK},
+		},
+		{
+			name:        "get list of events by user",
+			method:      []string{http.MethodGet},
+			url:         []string{"/user/0"},
+			requestBody: []io.Reader{nil},
+			wantBody: []string{strings.Join([]string{string(storage.TestEventJson),
+				string(storage.TestEvent3Json)}, "},{")},
+			statusCode: []int{http.StatusOK},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -96,17 +122,8 @@ func TestHandler(t *testing.T) {
 				logg.Infof("response: %s", w.Body.String())
 				require.Equal(t, tc.statusCode[i], w.Code)
 
-				/*
-					var listEvents []model.Event
-					err := json.NewDecoder(w.Body).Decode(&listEvents)
-					require.NoError(t, err)
-					require.Equal(t, tc.wantBody[i], listEvents)
-				*/
-				l, o := time.Now().Zone()
-				logg.Info(l, o)
 				exp := strings.Split(tc.wantBody[i], "},{")
 				act := strings.Split(w.Body.String(), "},{")
-
 				exp = responseBodyReplace(exp)
 				act = responseBodyReplace(act)
 				require.ElementsMatch(t, exp, act)
@@ -117,7 +134,7 @@ func TestHandler(t *testing.T) {
 
 func responseBodyReplace(str []string) []string {
 	res := make([]string, 0)
-	replacer := strings.NewReplacer("[", "", "{", "", "}", "", fmt.Sprintf("%v", time.Local), "")
+	replacer := strings.NewReplacer("[", "", "{", "", "}", "", "]", "")
 
 	for _, s := range str {
 		res = append(res, replacer.Replace(s))
