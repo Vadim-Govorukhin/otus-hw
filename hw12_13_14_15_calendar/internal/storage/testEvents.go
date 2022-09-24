@@ -5,6 +5,7 @@ import (
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/model"
 	"github.com/google/uuid"
+	jsontime "github.com/liamylian/jsontime/v2/v2"
 )
 
 var (
@@ -36,3 +37,42 @@ var (
 		NotifyUserTime: (24 * time.Hour).Seconds(),
 	}
 )
+
+var (
+	TestEventJson  []byte
+	TestEvent2Json []byte
+	TestEvent3Json []byte
+)
+
+type TestEventIDRespose struct {
+	ID model.EventID `db:"event_id" json:"event_id,omitempty"`
+}
+
+var (
+	TestEventIDJson  []byte
+	TestEvent3IDJson []byte
+	TestEvent2IDJson []byte
+)
+
+func init() {
+	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02 15:04:05")
+	json := jsontime.ConfigWithCustomTimeFormat
+
+	TestEventJson, _ = json.Marshal(TestEvent)
+	TestEvent2Json, _ = json.Marshal(TestEvent2)
+	TestEvent3Json, _ = json.Marshal(TestEvent3)
+
+	TestEventID := TestEventIDRespose{
+		ID: TestEvent.ID,
+	}
+	TestEvent2ID := TestEventIDRespose{
+		ID: TestEvent2.ID,
+	}
+	TestEvent3ID := TestEventIDRespose{
+		ID: TestEvent3.ID,
+	}
+
+	TestEventIDJson, _ = json.Marshal(TestEventID)
+	TestEvent2IDJson, _ = json.Marshal(TestEvent2ID)
+	TestEvent3IDJson, _ = json.Marshal(TestEvent3ID)
+}
