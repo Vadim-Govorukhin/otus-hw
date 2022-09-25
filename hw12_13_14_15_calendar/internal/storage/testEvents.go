@@ -56,7 +56,7 @@ var (
 )
 
 func init() {
-	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02T15:04:05")
+	jsontime.AddTimeFormatAlias("sql_datetime", time.RFC3339Nano)
 	json := jsontime.ConfigWithCustomTimeFormat
 
 	TestEventJson, _ = json.Marshal(TestEvent)
