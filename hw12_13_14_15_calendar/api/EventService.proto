@@ -19,17 +19,18 @@ message Event {
 }
 
 message CreateEventRequest {
-    string title = 1;
-    google.protobuf.Timestamp start_time = 2;
-    google.protobuf.Timestamp end_time = 3;
-    int32 user_owner = 4;
+    optional EventID event_id = 1; 
+    string title = 2;
+    google.protobuf.Timestamp start_date = 3;
+    google.protobuf.Timestamp end_date = 4;
+    optional string text = 5;
+    int32 user_owner = 6;
+    optional float notify_time = 7;
 }
 
 message CreateEventResponse {
-    oneof result {
-        Event event = 1;
-        string error = 2;
-    }
+    Event event = 1;
+    string error = 2;
 }
 
 service CalendarService {

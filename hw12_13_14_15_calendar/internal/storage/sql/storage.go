@@ -93,7 +93,7 @@ func (s *Storage) Create(e model.Event) error {
 	}
 	_, err := query.Exec(e)
 	if err != nil {
-		fmt.Printf("failed to insert event %#v to db: error %v", e, err)
+		fmt.Printf("failed to insert event %#v to db: error %v\n", e, err)
 		return err
 	}
 	return nil
@@ -101,12 +101,19 @@ func (s *Storage) Create(e model.Event) error {
 
 func (s *Storage) Update(eid model.EventID, e model.Event) error {
 	e.ID = eid
-	query, ok := s.preparedQuery["update"]
+	queryUpdate, ok := s.preparedQuery["update"]
 	if !ok {
 		fmt.Printf("prepared query not found")
 		return storage.ErrorPreparedQueryNotFound
 	}
-	_, err := query.Exec(e)
+
+	_, err := s.GetEventByid(eid)
+	if err != nil {
+		fmt.Printf("failed to select event by id %s: error %v", eid, err)
+		return err
+	}
+
+	_, err = queryUpdate.Exec(e)
 	if err != nil {
 		fmt.Printf("failed to update event %#v to db: error %v", e, err)
 		return err
@@ -220,4 +227,19 @@ func (s *Storage) listEventsByQuery(queryKey string, param interface{}) ([]model
 	}
 
 	return listEvents, nil
+}
+
+func (s *Storage) ClearAll() error {
+	res, err := s.db.Exec("DELETE FROM events;")
+	if err != nil {
+		fmt.Printf("can't delete contents from events with error: %v\n", err)
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		fmt.Printf("can't count affected rows: %v\n", err)
+		return err
+	}
+	fmt.Printf("deleted %v rows\n", n)
+	return nil
 }

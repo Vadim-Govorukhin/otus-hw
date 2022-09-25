@@ -2,7 +2,6 @@ package internalhttp
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 
 	//nolint:gci
 	ginzap "github.com/akath19/gin-zap"
+	jsontime "github.com/liamylian/jsontime/v2/v2"
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/app"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/config"
@@ -29,6 +29,7 @@ type Server struct {
 }
 
 func (s *Server) Start(ctx context.Context) error {
+	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02 15:04:05")
 	err := s.server.ListenAndServe()
 	if err == http.ErrServerClosed {
 		return nil
@@ -88,6 +89,7 @@ func CreateHandler(calendar *app.App, ginLogg gin.HandlerFunc) http.Handler {
 }
 
 func createEventHandler(c *gin.Context) {
+	json := jsontime.ConfigWithCustomTimeFormat
 	jsonData, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
@@ -109,6 +111,7 @@ func createEventHandler(c *gin.Context) {
 }
 
 func updateEventHandler(c *gin.Context) {
+	json := jsontime.ConfigWithCustomTimeFormat
 	id, err := uuid.Parse(c.Params.ByName("id"))
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())

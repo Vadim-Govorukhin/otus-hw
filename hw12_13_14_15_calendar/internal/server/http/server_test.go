@@ -170,7 +170,8 @@ func TestHandler(t *testing.T) {
 
 func responseBodyReplace(str []string) []string {
 	res := make([]string, 0)
-	replacer := strings.NewReplacer("[", "", "{", "", "}", "", "]", "")
+	replacer := strings.NewReplacer("[", "", "{", "", "}", "", "]", "",
+		"+03:00", "") // time.Local
 
 	for _, s := range str {
 		res = append(res, replacer.Replace(s))

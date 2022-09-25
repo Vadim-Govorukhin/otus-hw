@@ -8,5 +8,5 @@ level = "INFO"
 path = "\\logs\\log.json"
 
 [storage]
-type = "memory"
+type = "sql"
 database_url = "postgres://otus:otus@localhost:5432/calendar?sslmode=disable"

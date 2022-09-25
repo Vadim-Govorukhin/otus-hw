@@ -18,6 +18,7 @@ type EventStorage interface {
 	ListAllEvents() ([]model.Event, error)              // Листинг всех событий
 	ListUserEvents(model.UserID) ([]model.Event, error) // Листинг всех событий юзера
 	Close(context.Context) error                        // Закрытие хранилища
+	ClearAll() error                                    // Очистка содержимого хранилища
 }
 
 type Notification struct {

@@ -76,7 +76,7 @@ func TestStorage(t *testing.T) {
 	t.Run("create events in test db", func(t *testing.T) {
 		store := setupTest(t)
 		defer func() {
-			err := teardown(store, []string{"events"})
+			err := store.ClearAll()
 			require.NoError(t, err)
 			store.Close(context.Background())
 		}()
@@ -88,7 +88,7 @@ func TestStorage(t *testing.T) {
 	t.Run("get by id test db", func(t *testing.T) {
 		store := setupTest(t)
 		defer func() {
-			err := teardown(store, []string{"events"})
+			err := store.ClearAll()
 			require.NoError(t, err)
 			store.Close(context.Background())
 		}()
@@ -107,7 +107,7 @@ func TestStorage(t *testing.T) {
 	t.Run("Update and delete event", func(t *testing.T) {
 		store := setupTest(t)
 		defer func() {
-			err := teardown(store, []string{"events"})
+			err := store.ClearAll()
 			require.NoError(t, err)
 			store.Close(context.Background())
 		}()
@@ -142,7 +142,7 @@ func TestStorage(t *testing.T) {
 	t.Run("lists events in test db", func(t *testing.T) {
 		store := setupTest(t)
 		defer func() {
-			err := teardown(store, []string{"events"})
+			err := store.ClearAll()
 			require.NoError(t, err)
 			store.Close(context.Background())
 		}()
@@ -158,7 +158,7 @@ func TestStorage(t *testing.T) {
 	t.Run("lists events in test db", func(t *testing.T) {
 		store := setupTest(t)
 		defer func() {
-			err := teardown(store, []string{"events"})
+			err := store.ClearAll()
 			require.NoError(t, err)
 			store.Close(context.Background())
 		}()
