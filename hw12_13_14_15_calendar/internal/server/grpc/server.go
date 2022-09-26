@@ -3,15 +3,9 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
-	"os"
-	"path/filepath"
-	"time"
 
-	ginzap "github.com/akath19/gin-zap"
-	"github.com/gin-gonic/gin"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	jsontime "github.com/liamylian/jsontime/v2/v2"
 
@@ -36,15 +30,12 @@ type Server struct {
 
 func (s *Server) Start(ctx context.Context) error {
 	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02 15:04:05")
-	fmt.Print("Start gRPC listener")
-
 	lis, err := net.Listen("tcp", s.address)
 	if err != nil {
 		return fmt.Errorf("fail to listen: %w", err)
 	}
 
-	fmt.Print("regislet gRPC service")
-	eventer.RegisterCalendarServer(s.server, *s) //
+	eventer.RegisterCalendarServer(s.server, *s)
 	err = s.server.Serve(lis)
 	if err == http.ErrServerClosed {
 		return nil
@@ -57,28 +48,9 @@ func (s *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-func configureLoggerGin(logg *logger.Logger, logPath string) gin.HandlerFunc {
-	curDir, err := os.Getwd()
-	if err != nil {
-		logg.DPanicf("can't get working dir %w", err)
-	}
-
-	logFile, err := os.OpenFile(filepath.Join(curDir, logPath),
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		logg.DPanicf("can't open log file %w", err)
-	}
-	gin.DefaultWriter = io.MultiWriter(logFile, os.Stdout)
-
-	ginLogg := ginzap.Logger(3*time.Second, logg.Desugar())
-	return ginLogg
-}
-
 func NewServer(logg *logger.Logger, app *app.App, conf *config.GRPCServerConf) *Server {
 	calendarApp = app
 	address := net.JoinHostPort(conf.Host, conf.Port)
-	ginLogg := configureLoggerGin(logg, conf.LogPath)
-	var _ = ginLogg
 	return &Server{
 		address: address,
 		server:  grpc.NewServer(grpc.UnaryInterceptor(grpc_zap.UnaryServerInterceptor(logg.Desugar())))}

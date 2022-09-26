@@ -25,9 +25,8 @@ type HTTPServerConf struct {
 }
 
 type GRPCServerConf struct {
-	Host    string `toml:"host"`
-	Port    string `toml:"port"`
-	LogPath string `toml:"log_path"`
+	Host string `toml:"host"`
+	Port string `toml:"port"`
 }
 
 func NewConfig() *Config {
