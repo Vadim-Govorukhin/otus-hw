@@ -8,7 +8,10 @@ build:
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
 run: build
-	$(BIN) -config ./configs/config.toml
+	$(BIN) -config ./configs/calendar_config.toml
+
+generate:
+	protoc api/EventService.proto --go-grpc_out=api/stubs --go_out=api/stubs
 
 build-img:
 	docker build \
