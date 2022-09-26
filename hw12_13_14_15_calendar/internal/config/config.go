@@ -4,6 +4,7 @@ type Config struct {
 	Storage    *StorageConf
 	Logger     *LoggerConf // Логирование
 	HTTPServer *HTTPServerConf
+	GRPCServer *GRPCServerConf
 	SessionKey string `toml:"session_key"` // Ключ для генерации сессий
 }
 
@@ -18,6 +19,12 @@ type StorageConf struct {
 }
 
 type HTTPServerConf struct {
+	Host    string `toml:"host"`
+	Port    string `toml:"port"`
+	LogPath string `toml:"log_path"`
+}
+
+type GRPCServerConf struct {
 	Host    string `toml:"host"`
 	Port    string `toml:"port"`
 	LogPath string `toml:"log_path"`

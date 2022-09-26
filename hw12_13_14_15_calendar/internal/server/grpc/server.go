@@ -2,17 +2,83 @@ package grpc
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
+	"time"
+
+	ginzap "github.com/akath19/gin-zap"
+	"github.com/gin-gonic/gin"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	jsontime "github.com/liamylian/jsontime/v2/v2"
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/api/stubs/eventer"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/app"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/logger"
+	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/server"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+var calendarApp *app.App
+var _ server.Server = &Server{}
+
 type Server struct {
 	eventer.UnimplementedCalendarServer
+	address string
+	server  *grpc.Server
+}
+
+func (s *Server) Start(ctx context.Context) error {
+	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02 15:04:05")
+	lis, err := net.Listen("tcp", s.address)
+	if err != nil {
+		return fmt.Errorf("fail to listen^ %w", err)
+	}
+
+	eventer.RegisterCalendarServer(s.server, *s) //
+	err = s.server.Serve(lis)
+	if err == http.ErrServerClosed {
+		return nil
+	}
+	return err
+}
+
+func (s *Server) Stop(ctx context.Context) error {
+	s.server.GracefulStop()
+	return nil
+}
+
+func configureLoggerGin(logg *logger.Logger, logPath string) gin.HandlerFunc {
+	curDir, err := os.Getwd()
+	if err != nil {
+		logg.DPanicf("can't get working dir %w", err)
+	}
+
+	logFile, err := os.OpenFile(filepath.Join(curDir, logPath),
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		logg.DPanicf("can't open log file %w", err)
+	}
+	gin.DefaultWriter = io.MultiWriter(logFile, os.Stdout)
+
+	ginLogg := ginzap.Logger(3*time.Second, logg.Desugar())
+	return ginLogg
+}
+
+func NewServer(logg *logger.Logger, app *app.App, conf *config.GRPCServerConf) *Server {
+	calendarApp = app
+	address := net.JoinHostPort(conf.Host, conf.Port)
+	ginLogg := configureLoggerGin(logg, conf.LogPath)
+	var _ = ginLogg
+	return &Server{
+		address: address,
+		server:  grpc.NewServer(grpc.UnaryInterceptor(grpc_zap.UnaryServerInterceptor(logg.Desugar())))}
 }
 
 func (s Server) CreateEvent(ctx context.Context, e *eventer.Event) (*eventer.EventID, error) {
@@ -47,8 +113,4 @@ func (s Server) ListAllEvent(ctx context.Context, _ *emptypb.Empty) (*eventer.Ev
 
 func (s Server) ListAllEventByUser(ctx context.Context, uid *eventer.UserID) (*eventer.EventResponse, error) {
 	panic("not implemented") // TODO: Implement
-}
-
-func NewServer(logg *logger.Logger, app *app.App, conf *config.HTTPServerConf) eventer.CalendarServer {
-	return Server{}
 }

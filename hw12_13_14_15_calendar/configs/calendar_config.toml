@@ -1,7 +1,12 @@
 [hTTPServer]
 host = "127.0.0.1"
 port = "5080"
-log_path = "\\logs\\server_log.json"
+log_path = "\\logs\\server_http_log.json"
+
+[gRPCServer]
+host = "127.0.0.1"
+port = "5081"
+log_path = "\\logs\\server_grpc_log.json"
 
 [logger]
 level = "INFO"

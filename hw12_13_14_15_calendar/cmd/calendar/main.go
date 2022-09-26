@@ -13,6 +13,7 @@ import (
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/app"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/logger"
+	internalgrpc "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/server/grpc"
 	internalhttp "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/server/http"
 	basestorage "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage/base"
 )
@@ -49,7 +50,8 @@ func main() {
 	logg.Infof("Create storage: %T\n", storage)
 
 	calendar := app.New(logg, storage)
-	server := internalhttp.NewServer(logg, calendar, conf.HTTPServer)
+	httpserver := internalhttp.NewServer(logg, calendar, conf.HTTPServer)
+	grpcserver := internalgrpc.NewServer(logg, calendar, conf.GRPCServer)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -61,8 +63,11 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 		defer cancel()
 
-		if err := server.Stop(ctx); err != nil {
+		if err := httpserver.Stop(ctx); err != nil {
 			logg.Errorf("failed to stop http server: %s", err.Error())
+		}
+		if err := grpcserver.Stop(ctx); err != nil {
+			logg.Errorf("failed to stop grpc server: %s", err.Error())
 		}
 		if err := storage.Close(ctx); err != nil {
 			logg.Errorf("failed to close storage: %s", err.Error())
@@ -71,7 +76,13 @@ func main() {
 
 	logg.Info("calendar is running...")
 
-	if err := server.Start(ctx); err != nil {
+	if err := httpserver.Start(ctx); err != nil {
+		logg.Error("failed to start http server: " + err.Error())
+		cancel()
+		os.Exit(1) //nolint:gocritic
+	}
+
+	if err := grpcserver.Start(ctx); err != nil {
 		logg.Error("failed to start http server: " + err.Error())
 		cancel()
 		os.Exit(1) //nolint:gocritic

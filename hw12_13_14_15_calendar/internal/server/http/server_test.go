@@ -25,7 +25,7 @@ var calendarApp *app.App
 
 func testStart() (*zap.SugaredLogger, http.Handler) {
 	conf := config.NewConfig()
-	toml.DecodeFile("../../../configs/config.toml", &conf)
+	toml.DecodeFile("../../../configs/calendar_config.toml", &conf)
 
 	logger, _ := zap.NewDevelopment()
 	logg := logger.Sugar()
