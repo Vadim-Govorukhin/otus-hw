@@ -36,11 +36,14 @@ type Server struct {
 
 func (s *Server) Start(ctx context.Context) error {
 	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02 15:04:05")
+	fmt.Print("Start gRPC listener")
+
 	lis, err := net.Listen("tcp", s.address)
 	if err != nil {
-		return fmt.Errorf("fail to listen^ %w", err)
+		return fmt.Errorf("fail to listen: %w", err)
 	}
 
+	fmt.Print("regislet gRPC service")
 	eventer.RegisterCalendarServer(s.server, *s) //
 	err = s.server.Serve(lis)
 	if err == http.ErrServerClosed {
@@ -81,8 +84,16 @@ func NewServer(logg *logger.Logger, app *app.App, conf *config.GRPCServerConf) *
 		server:  grpc.NewServer(grpc.UnaryInterceptor(grpc_zap.UnaryServerInterceptor(logg.Desugar())))}
 }
 
-func (s Server) CreateEvent(ctx context.Context, e *eventer.Event) (*eventer.EventID, error) {
-	panic("not implemented") // TODO: Implement
+func (s Server) CreateEvent(ctx context.Context, ge *eventer.Event) (*eventer.EventID, error) {
+	e, err := GRPCToModel(ge)
+	if err != nil {
+		return &eventer.EventID{}, err
+	}
+	eid, err := calendarApp.Create(*e)
+	if err != nil {
+		return nil, err
+	}
+	return EventIDToGRPC(&eid), err
 }
 
 func (s Server) UprateEvent(ctx context.Context, _ *eventer.UpdateEventRequest) (*eventer.EventID, error) {
@@ -106,9 +117,9 @@ func (s Server) ListEventByMonth(ctx context.Context, date *timestamppb.Timestam
 }
 
 func (s Server) ListAllEvent(ctx context.Context, _ *emptypb.Empty) (*eventer.EventResponse, error) {
-	var err error
-	e := &eventer.EventResponse{}
-	return e, err
+	list, err := calendarApp.ListAllEvents()
+	resp := &eventer.EventResponse{Event: ListModelToListGRPC(list)}
+	return resp, err
 }
 
 func (s Server) ListAllEventByUser(ctx context.Context, uid *eventer.UserID) (*eventer.EventResponse, error) {

@@ -16,13 +16,13 @@ message UserID {
 }
 
 message Event {
-    optional EventID event_id = 1; 
+    optional EventID id = 1; 
     string title = 2;
     google.protobuf.Timestamp start_date = 3;
     google.protobuf.Timestamp end_date = 4;
-    optional string text = 5;
-    UserID user_owner = 6;
-    optional float notify_time = 7;
+    optional string description = 5;
+    UserID user_id = 6;
+    optional double notify_user_time = 7;
 }
 
 message CreateEventRequest {
