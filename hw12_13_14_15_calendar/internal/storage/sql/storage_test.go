@@ -20,24 +20,6 @@ const (
 	testDatabaseURL = "postgres://otus:otus@localhost:5432/calendar_test?sslmode=disable"
 )
 
-func teardown(s *Storage, tables []string) error {
-	if len(tables) > 0 {
-		// res, err := s.db.Exec("DELETE FROM ", strings.Join(tables, " ,"))
-		res, err := s.db.Exec("DELETE FROM events;")
-		if err != nil {
-			fmt.Printf("can't delete contents from %s\n with error: %v\n", tables, err)
-			return err
-		}
-		n, err := res.RowsAffected()
-		if err != nil {
-			fmt.Printf("can't count affected rows: %v\n", err)
-			return err
-		}
-		fmt.Printf("deleted %v rows\n", n)
-	}
-	return nil
-}
-
 func setupTest(t *testing.T) *Storage {
 	t.Helper()
 	fmt.Printf("====== start test %s =====\n", t.Name())

@@ -67,8 +67,8 @@ func ListModelToListGRPC(elist []model.Event) []*eventer.Event {
 		return nil
 	}
 	glist := make([]*eventer.Event, 0)
-	for _, e := range elist {
-		glist = append(glist, EventToGRPC(&e))
+	for i := range elist {
+		glist = append(glist, EventToGRPC(&elist[i]))
 	}
 	return glist
 }

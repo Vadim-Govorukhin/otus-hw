@@ -108,7 +108,7 @@ func createEventHandler(c *gin.Context) {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"event_id": id})
+	c.JSON(http.StatusOK, gin.H{"eventId": id})
 }
 
 func updateEventHandler(c *gin.Context) {
@@ -136,7 +136,7 @@ func updateEventHandler(c *gin.Context) {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"event_id": id})
+	c.JSON(http.StatusOK, gin.H{"eventId": id})
 }
 
 func deleteEventHandler(c *gin.Context) {

@@ -47,7 +47,7 @@ var (
 )
 
 type TestEventIDRespose struct {
-	ID model.EventID `db:"event_id" json:"event_id,omitempty"`
+	ID model.EventID `db:"event_id" json:"eventId,omitempty"`
 }
 
 var (
