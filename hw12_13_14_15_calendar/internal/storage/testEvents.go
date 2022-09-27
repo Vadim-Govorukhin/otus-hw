@@ -36,6 +36,7 @@ var (
 		UserID:         0,
 		NotifyUserTime: (24 * time.Hour).Seconds(),
 	}
+	TmpEvent model.Event
 )
 
 var (
@@ -63,9 +64,9 @@ func init() {
 	TestEvent2Json, _ = json.Marshal(TestEvent2)
 	TestEvent3Json, _ = json.Marshal(TestEvent3)
 
-	tmpEvent := TestEvent2
-	tmpEvent.ID = TestEvent.ID
-	TestEventJsonUpdated, _ = json.Marshal(tmpEvent)
+	TmpEvent = TestEvent2
+	TmpEvent.ID = TestEvent.ID
+	TestEventJsonUpdated, _ = json.Marshal(TmpEvent)
 
 	TestEventID := TestEventIDRespose{
 		ID: TestEvent.ID,

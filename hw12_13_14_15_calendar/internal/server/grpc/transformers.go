@@ -2,6 +2,7 @@ package internalgrpc
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/api/stubs/eventer"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/model"
@@ -9,7 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func ModelToGRPC(e *model.Event) *eventer.Event {
+func EventToGRPC(e *model.Event) *eventer.Event {
 	ev := &eventer.Event{
 		Id:             EventIDToGRPC(&e.ID),
 		Title:          e.Title,
@@ -30,16 +31,17 @@ func UserIDToGRPC(uid *model.UserID) *eventer.UserID {
 	return &eventer.UserID{Value: int32(*uid)}
 }
 
-func GRPCToModel(ge *eventer.Event) (*model.Event, error) {
+func GRPCToEvent(ge *eventer.Event) (*model.Event, error) {
 	eid, err := GRPCToEventID(ge.Id)
 	if err != nil {
 		return &model.Event{}, err
 	}
+
 	e := &model.Event{
 		ID:             *eid,
 		Title:          ge.GetTitle(),
-		StartDate:      ge.GetStartDate().AsTime(),
-		EndDate:        ge.GetEndDate().AsTime(),
+		StartDate:      ge.GetStartDate().AsTime().In(time.Local),
+		EndDate:        ge.GetEndDate().AsTime().In(time.Local),
 		Description:    ge.GetDescription(),
 		UserID:         *GRPCToUserID(ge.UserId),
 		NotifyUserTime: ge.GetNotifyUserTime(),
@@ -61,9 +63,12 @@ func GRPCToUserID(guid *eventer.UserID) *model.UserID {
 }
 
 func ListModelToListGRPC(elist []model.Event) []*eventer.Event {
+	if len(elist) == 0 {
+		return nil
+	}
 	glist := make([]*eventer.Event, 0)
 	for _, e := range elist {
-		glist = append(glist, ModelToGRPC(&e))
+		glist = append(glist, EventToGRPC(&e))
 	}
 	return glist
 }

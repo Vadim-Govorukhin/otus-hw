@@ -52,7 +52,7 @@ func TestHandler(t *testing.T) {
 		statusCode  []int
 	}{
 		{
-			name:        "get empty events",
+			name:        "get empty event list",
 			method:      []string{http.MethodGet},
 			url:         []string{"/event/"},
 			requestBody: []io.Reader{nil},

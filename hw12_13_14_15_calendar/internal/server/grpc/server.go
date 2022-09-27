@@ -29,7 +29,6 @@ type Server struct {
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02 15:04:05")
 	lis, err := net.Listen("tcp", s.address)
 	if err != nil {
 		return fmt.Errorf("fail to listen: %w", err)
@@ -49,6 +48,7 @@ func (s *Server) Stop(ctx context.Context) error {
 }
 
 func NewServer(logg *logger.Logger, app *app.App, conf *config.GRPCServerConf) *Server {
+	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02 15:04:05")
 	calendarApp = app
 	address := net.JoinHostPort(conf.Host, conf.Port)
 	return &Server{
@@ -57,7 +57,7 @@ func NewServer(logg *logger.Logger, app *app.App, conf *config.GRPCServerConf) *
 }
 
 func (s Server) CreateEvent(ctx context.Context, ge *eventer.Event) (*eventer.EventID, error) {
-	e, err := GRPCToModel(ge)
+	e, err := GRPCToEvent(ge)
 	if err != nil {
 		return &eventer.EventID{}, err
 	}
@@ -68,24 +68,62 @@ func (s Server) CreateEvent(ctx context.Context, ge *eventer.Event) (*eventer.Ev
 	return EventIDToGRPC(&eid), err
 }
 
-func (s Server) UprateEvent(ctx context.Context, _ *eventer.UpdateEventRequest) (*eventer.EventID, error) {
-	panic("not implemented") // TODO: Implement
+func (s Server) UprateEvent(ctx context.Context, req *eventer.UpdateEventRequest) (*eventer.EventID, error) {
+	e, err := GRPCToEvent(req.Event)
+	if err != nil {
+		return nil, err
+	}
+	eid, err := GRPCToEventID(req.EventId)
+	if err != nil {
+		return nil, err
+	}
+	err = calendarApp.Update(*eid, *e)
+	if err != nil {
+		return nil, err
+	}
+	return req.Event.GetId(), nil
 }
 
-func (s Server) DeleteEvent(ctx context.Context, eid *eventer.EventID) (*eventer.EventID, error) {
-	panic("not implemented") // TODO: Implement
+func (s Server) DeleteEvent(ctx context.Context, geid *eventer.EventID) (*eventer.EventID, error) {
+	eid, err := GRPCToEventID(geid)
+	if err != nil {
+		return nil, err
+	}
+	err = calendarApp.Delete(*eid)
+	if err != nil {
+		return nil, err
+	}
+	return geid, nil
 }
 
-func (s Server) GetEventByID(ctx context.Context, eid *eventer.EventID) (*eventer.Event, error) {
-	panic("not implemented") // TODO: Implement
+func (s Server) GetEventByID(ctx context.Context, geid *eventer.EventID) (*eventer.Event, error) {
+	eid, err := GRPCToEventID(geid)
+	if err != nil {
+		return nil, err
+	}
+	e, err := calendarApp.GetEventByid(*eid)
+	if err != nil {
+		return nil, err
+	}
+	return EventToGRPC(&e), nil
 }
 
 func (s Server) ListEventByDay(ctx context.Context, date *timestamppb.Timestamp) (*eventer.EventResponse, error) {
-	panic("not implemented") // TODO: Implement
+	list, err := calendarApp.ListEventsByDay(date.AsTime())
+	if err != nil {
+		return nil, err
+	}
+	resp := &eventer.EventResponse{Event: ListModelToListGRPC(list)}
+	return resp, nil
 }
 
 func (s Server) ListEventByMonth(ctx context.Context, date *timestamppb.Timestamp) (*eventer.EventResponse, error) {
-	panic("not implemented") // TODO: Implement
+	list, err := calendarApp.ListEventsByMonth(date.AsTime())
+	if err != nil {
+		return nil, err
+	}
+	resp := &eventer.EventResponse{Event: ListModelToListGRPC(list)}
+	return resp, nil
 }
 
 func (s Server) ListAllEvent(ctx context.Context, _ *emptypb.Empty) (*eventer.EventResponse, error) {
@@ -95,5 +133,10 @@ func (s Server) ListAllEvent(ctx context.Context, _ *emptypb.Empty) (*eventer.Ev
 }
 
 func (s Server) ListAllEventByUser(ctx context.Context, uid *eventer.UserID) (*eventer.EventResponse, error) {
-	panic("not implemented") // TODO: Implement
+	list, err := calendarApp.ListUserEvents(*GRPCToUserID(uid))
+	if err != nil {
+		return nil, err
+	}
+	resp := &eventer.EventResponse{Event: ListModelToListGRPC(list)}
+	return resp, nil
 }
