@@ -13,14 +13,12 @@ import (
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/app"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/logger"
-	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/server"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var calendarApp *app.App
-var _ server.Server = &Server{}
 
 type Server struct {
 	eventer.UnimplementedCalendarServer

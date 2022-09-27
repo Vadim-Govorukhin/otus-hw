@@ -158,4 +158,15 @@ func TestGRPCService(t *testing.T) {
 		expList = []model.Event{storage.TmpEvent, storage.TestEvent3}
 		GRPCListsEqual(t, internalgrpc.ListModelToListGRPC(expList), resp.GetEvent())
 	})
+
+	t.Run("Get event by id", func(t *testing.T) {
+		_, err := client.GetEventByID(ctx, internalgrpc.EventIDToGRPC(&storage.TestEvent.ID))
+		require.ErrorContains(t, err, storage.ErrorWrongID.Error())
+
+		resp, err := client.GetEventByID(ctx, internalgrpc.EventIDToGRPC(&storage.TestEvent3.ID))
+		require.NoError(t, err)
+		e, err := internalgrpc.GRPCToEvent(resp)
+		require.NoError(t, err)
+		require.Equal(t, storage.TestEvent3, *e)
+	})
 }
