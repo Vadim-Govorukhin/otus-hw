@@ -1,4 +1,4 @@
-package grpc
+package internalgrpc
 
 import (
 	"fmt"
@@ -48,9 +48,9 @@ func GRPCToModel(ge *eventer.Event) (*model.Event, error) {
 }
 
 func GRPCToEventID(geid *eventer.EventID) (*model.EventID, error) {
-	b, err := uuid.FromBytes([]byte(geid.GetValue()))
+	b, err := uuid.Parse(geid.GetValue())
 	if err != nil {
-		err = fmt.Errorf("fail uuid.FromBytes with param %v: %w", geid.GetValue(), err)
+		err = fmt.Errorf("fail uuid.Parse with param %v: %w", geid.GetValue(), err)
 	}
 	return &b, err
 }
