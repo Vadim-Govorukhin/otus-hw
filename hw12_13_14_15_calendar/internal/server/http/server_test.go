@@ -71,12 +71,16 @@ func TestHandler(t *testing.T) {
 			name:   "create events",
 			method: []string{http.MethodPost, http.MethodPost, http.MethodPost},
 			url:    []string{"/event/", "/event/", "/event/"},
-			requestBody: []io.Reader{bytes.NewReader(storage.TestEventJson),
-				bytes.NewReader(storage.TestEvent2Json),
-				bytes.NewReader(storage.TestEvent3Json)},
-			wantBody: []string{string(storage.TestEventIDJson),
+			requestBody: []io.Reader{
+				bytes.NewReader(storage.TestEventJSON),
+				bytes.NewReader(storage.TestEvent2JSON),
+				bytes.NewReader(storage.TestEvent3JSON),
+			},
+			wantBody: []string{
+				string(storage.TestEventIDJson),
 				string(storage.TestEvent2IDJson),
-				string(storage.TestEvent3IDJson)},
+				string(storage.TestEvent3IDJson),
+			},
 			statusCode: []int{http.StatusOK, http.StatusOK, http.StatusOK},
 		},
 		{
@@ -84,9 +88,11 @@ func TestHandler(t *testing.T) {
 			method:      []string{http.MethodGet},
 			url:         []string{"/event/"},
 			requestBody: []io.Reader{nil},
-			wantBody: []string{strings.Join([]string{string(storage.TestEventJson),
-				string(storage.TestEvent2Json),
-				string(storage.TestEvent3Json)}, "},{")},
+			wantBody: []string{strings.Join([]string{
+				string(storage.TestEventJSON),
+				string(storage.TestEvent2JSON),
+				string(storage.TestEvent3JSON),
+			}, "},{")},
 			statusCode: []int{http.StatusOK},
 		},
 		{
@@ -94,8 +100,10 @@ func TestHandler(t *testing.T) {
 			method:      []string{http.MethodGet},
 			url:         []string{"/due/2022/9/16"},
 			requestBody: []io.Reader{nil},
-			wantBody: []string{strings.Join([]string{string(storage.TestEvent2Json),
-				string(storage.TestEvent3Json)}, "},{")},
+			wantBody: []string{strings.Join([]string{
+				string(storage.TestEvent2JSON),
+				string(storage.TestEvent3JSON),
+			}, "},{")},
 			statusCode: []int{http.StatusOK},
 		},
 		{
@@ -103,8 +111,10 @@ func TestHandler(t *testing.T) {
 			method:      []string{http.MethodGet},
 			url:         []string{"/due/2022/9"},
 			requestBody: []io.Reader{nil},
-			wantBody: []string{strings.Join([]string{string(storage.TestEvent2Json),
-				string(storage.TestEventJson)}, "},{")},
+			wantBody: []string{strings.Join([]string{
+				string(storage.TestEvent2JSON),
+				string(storage.TestEventJSON),
+			}, "},{")},
 			statusCode: []int{http.StatusOK},
 		},
 		{
@@ -112,8 +122,10 @@ func TestHandler(t *testing.T) {
 			method:      []string{http.MethodGet},
 			url:         []string{"/user/0"},
 			requestBody: []io.Reader{nil},
-			wantBody: []string{strings.Join([]string{string(storage.TestEventJson),
-				string(storage.TestEvent3Json)}, "},{")},
+			wantBody: []string{strings.Join([]string{
+				string(storage.TestEventJSON),
+				string(storage.TestEvent3JSON),
+			}, "},{")},
 			statusCode: []int{http.StatusOK},
 		},
 		{
@@ -121,7 +133,7 @@ func TestHandler(t *testing.T) {
 			method:      []string{http.MethodGet},
 			url:         []string{"/event/" + storage.TestEvent.ID.String()},
 			requestBody: []io.Reader{nil},
-			wantBody:    []string{string(storage.TestEventJson)},
+			wantBody:    []string{string(storage.TestEventJSON)},
 			statusCode:  []int{http.StatusOK},
 		},
 		{
@@ -135,13 +147,21 @@ func TestHandler(t *testing.T) {
 		{
 			name:   "update and delete events",
 			method: []string{http.MethodPut, http.MethodDelete, http.MethodGet},
-			url: []string{"/event/" + storage.TestEvent.ID.String(),
-				"/event/" + storage.TestEvent2.ID.String(), "/event/"},
-			requestBody: []io.Reader{bytes.NewReader(storage.TestEvent2Json),
-				nil, nil},
-			wantBody: []string{string(storage.TestEventIDJson), "\"deleted\"",
-				strings.Join([]string{string(storage.TestEventJsonUpdated),
-					string(storage.TestEvent3Json)}, "},{")},
+			url: []string{
+				"/event/" + storage.TestEvent.ID.String(),
+				"/event/" + storage.TestEvent2.ID.String(), "/event/",
+			},
+			requestBody: []io.Reader{
+				bytes.NewReader(storage.TestEvent2JSON),
+				nil, nil,
+			},
+			wantBody: []string{
+				string(storage.TestEventIDJson), "\"deleted\"",
+				strings.Join([]string{
+					string(storage.TestEventJSONUpdated),
+					string(storage.TestEvent3JSON),
+				}, "},{"),
+			},
 			statusCode: []int{http.StatusOK, http.StatusOK, http.StatusOK},
 		},
 	}
@@ -170,7 +190,7 @@ func TestHandler(t *testing.T) {
 
 func responseBodyReplace(str []string) []string {
 	res := make([]string, 0)
-	replacer := strings.NewReplacer("[", "", "{", "", "}", "", "]", "") //"+03:00", "") // time.Local
+	replacer := strings.NewReplacer("[", "", "{", "", "}", "", "]", "")
 
 	for _, s := range str {
 		res = append(res, replacer.Replace(s))

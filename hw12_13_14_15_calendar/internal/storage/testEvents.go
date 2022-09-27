@@ -40,10 +40,10 @@ var (
 )
 
 var (
-	TestEventJson        []byte
-	TestEvent2Json       []byte
-	TestEvent3Json       []byte
-	TestEventJsonUpdated []byte
+	TestEventJSON        []byte
+	TestEvent2JSON       []byte
+	TestEvent3JSON       []byte
+	TestEventJSONUpdated []byte
 )
 
 type TestEventIDRespose struct {
@@ -60,13 +60,13 @@ func init() {
 	jsontime.AddTimeFormatAlias("sql_datetime", time.RFC3339Nano)
 	json := jsontime.ConfigWithCustomTimeFormat
 
-	TestEventJson, _ = json.Marshal(TestEvent)
-	TestEvent2Json, _ = json.Marshal(TestEvent2)
-	TestEvent3Json, _ = json.Marshal(TestEvent3)
+	TestEventJSON, _ = json.Marshal(TestEvent)
+	TestEvent2JSON, _ = json.Marshal(TestEvent2)
+	TestEvent3JSON, _ = json.Marshal(TestEvent3)
 
 	TmpEvent = TestEvent2
 	TmpEvent.ID = TestEvent.ID
-	TestEventJsonUpdated, _ = json.Marshal(TmpEvent)
+	TestEventJSONUpdated, _ = json.Marshal(TmpEvent)
 
 	TestEventID := TestEventIDRespose{
 		ID: TestEvent.ID,

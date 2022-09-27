@@ -2,10 +2,12 @@ package internalgrpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
 
+	//nolint:gci
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	jsontime "github.com/liamylian/jsontime/v2/v2"
 
@@ -34,7 +36,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 	eventer.RegisterCalendarServer(s.server, *s)
 	err = s.server.Serve(lis)
-	if err == http.ErrServerClosed {
+	if errors.Is(err, http.ErrServerClosed) {
 		return nil
 	}
 	return err
@@ -51,7 +53,8 @@ func NewServer(logg *logger.Logger, app *app.App, conf *config.GRPCServerConf) *
 	address := net.JoinHostPort(conf.Host, conf.Port)
 	return &Server{
 		address: address,
-		server:  grpc.NewServer(grpc.UnaryInterceptor(grpc_zap.UnaryServerInterceptor(logg.Desugar())))}
+		server:  grpc.NewServer(grpc.UnaryInterceptor(grpc_zap.UnaryServerInterceptor(logg.Desugar()))),
+	}
 }
 
 func (s Server) CreateEvent(ctx context.Context, ge *eventer.Event) (*eventer.EventID, error) {

@@ -2,6 +2,7 @@ package internalhttp
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -31,7 +32,7 @@ type Server struct {
 func (s *Server) Start(ctx context.Context) error {
 	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02 15:04:05")
 	err := s.server.ListenAndServe()
-	if err == http.ErrServerClosed {
+	if errors.Is(err, http.ErrServerClosed) {
 		return nil
 	}
 	return err

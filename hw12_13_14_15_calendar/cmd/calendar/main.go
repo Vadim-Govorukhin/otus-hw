@@ -14,8 +14,7 @@ import (
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/logger"
 	internalgrpc "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/server/grpc"
-
-	//internalhttp "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/server/http"
+	internalhttp "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/server/http"
 	basestorage "github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/storage/base"
 )
 
@@ -51,7 +50,7 @@ func main() {
 	logg.Infof("Create storage: %T\n", storage)
 
 	calendar := app.New(logg, storage)
-	//httpserver := internalhttp.NewServer(logg, calendar, conf.HTTPServer)
+	httpserver := internalhttp.NewServer(logg, calendar, conf.HTTPServer)
 	grpcserver := internalgrpc.NewServer(logg, calendar, conf.GRPCServer)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
@@ -64,11 +63,10 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 		defer cancel()
 
-		/*
-			if err := httpserver.Stop(ctx); err != nil {
-				logg.Errorf("failed to stop http server: %s", err.Error())
-			}
-		*/
+		if err := httpserver.Stop(ctx); err != nil {
+			logg.Errorf("failed to stop http server: %s", err.Error())
+		}
+
 		if err := grpcserver.Stop(ctx); err != nil {
 			logg.Errorf("failed to stop grpc server: %s", err.Error())
 		}
@@ -79,17 +77,15 @@ func main() {
 
 	logg.Info("calendar is running...")
 
-	/*
-		if err := httpserver.Start(ctx); err != nil {
-			logg.Error("failed to start http server: " + err.Error())
-			cancel()
-			os.Exit(1) //nolint:gocritic
-		}
-	*/
+	if err := httpserver.Start(ctx); err != nil {
+		logg.Error("failed to start http server: " + err.Error())
+		cancel()
+		os.Exit(1) //nolint:gocritic
+	}
 
 	if err := grpcserver.Start(ctx); err != nil {
 		logg.Error("failed to start grpc server: " + err.Error())
 		cancel()
-		os.Exit(1) //nolint:gocritic
+		os.Exit(1)
 	}
 }

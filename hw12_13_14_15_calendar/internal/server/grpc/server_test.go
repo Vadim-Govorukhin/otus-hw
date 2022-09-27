@@ -24,6 +24,7 @@ import (
 )
 
 func GRPCListsEqual(t *testing.T, exp, act []*eventer.Event) {
+	t.Helper()
 	require.Equal(t, len(exp), len(act))
 
 	for _, elExp := range exp {
@@ -37,8 +38,10 @@ func GRPCListsEqual(t *testing.T, exp, act []*eventer.Event) {
 
 const bufSize = 1024 * 1024
 
-var lis *bufconn.Listener
-var calendarApp *app.App
+var (
+	lis         *bufconn.Listener
+	calendarApp *app.App
+)
 
 func testStart() (*zap.SugaredLogger, *grpc.ClientConn) {
 	conf := config.NewConfig()
@@ -68,7 +71,6 @@ func testStart() (*zap.SugaredLogger, *grpc.ClientConn) {
 		logg.Fatalf("Server exited with error: %v", err)
 	}
 	return logg, conn
-
 }
 
 func bufDialer(context.Context, string) (net.Conn, error) {
@@ -128,7 +130,7 @@ func TestGRPCService(t *testing.T) {
 		expList = []model.Event{storage.TestEvent2, storage.TestEvent}
 		GRPCListsEqual(t, internalgrpc.ListModelToListGRPC(expList), resp.GetEvent())
 
-		var uid = 0
+		uid := 0
 		resp, err = client.ListAllEventByUser(ctx, internalgrpc.UserIDToGRPC(&uid))
 		require.NoError(t, err)
 		expList = []model.Event{storage.TestEvent, storage.TestEvent3}
@@ -147,8 +149,10 @@ func TestGRPCService(t *testing.T) {
 		expList := []model.Event{storage.TestEvent2, storage.TestEvent3}
 		GRPCListsEqual(t, internalgrpc.ListModelToListGRPC(expList), resp.GetEvent())
 
-		updateReq := eventer.UpdateEventRequest{EventId: internalgrpc.EventIDToGRPC(&storage.TestEvent2.ID),
-			Event: internalgrpc.EventToGRPC(&storage.TmpEvent)}
+		updateReq := eventer.UpdateEventRequest{
+			EventId: internalgrpc.EventIDToGRPC(&storage.TestEvent2.ID),
+			Event:   internalgrpc.EventToGRPC(&storage.TmpEvent),
+		}
 		respID, err = client.UprateEvent(ctx, &updateReq)
 		require.NoError(t, err)
 		require.Equal(t, storage.TmpEvent.ID.String(), respID.GetValue())
