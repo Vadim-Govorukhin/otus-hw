@@ -78,14 +78,15 @@ func CreateHandler(calendar *app.App, ginLogg gin.HandlerFunc) http.Handler {
 	router := gin.Default()
 	router.Use(ginLogg)
 
-	router.POST("/event/", createEventHandler)          // Create
-	router.PUT("/event/:id", updateEventHandler)        // Update
-	router.DELETE("/event/:id", deleteEventHandler)     // Delete
-	router.GET("/event/:id", getEventHandler)           // GetEventByid
-	router.GET("/due/:year/:month/:day", dueDayHandler) // ListEventsByDay
-	router.GET("/due/:year/:month", dueMonthHandler)    // ListEventsByMonth
-	router.GET("/event/", getAllEventsHandler)          // ListAllEvents
-	router.GET("/user/:uid", getAllUserEventsHandler)   // ListUserEvents
+	router.POST("/event/", createEventHandler)               // Create
+	router.PUT("/event/:id", updateEventHandler)             // Update
+	router.DELETE("/event/:id", deleteEventHandler)          // Delete
+	router.GET("/event/:id", getEventHandler)                // GetEventByid
+	router.GET("/due/:year/:month/:day", dueDayHandler)      // ListEventsByDay
+	router.GET("/dueweek/:year/:month/:day", dueWeekHandler) // ListEventsByWeek
+	router.GET("/due/:year/:month", dueMonthHandler)         // ListEventsByMonth
+	router.GET("/event/", getAllEventsHandler)               // ListAllEvents
+	router.GET("/user/:uid", getAllUserEventsHandler)        // ListUserEvents
 	return router
 }
 
@@ -182,6 +183,29 @@ func dueDayHandler(c *gin.Context) {
 	date := time.Date(m["year"], time.Month(m["month"]), m["day"], 1, 2, 3, 0, time.Local)
 
 	events, err := calendarApp.ListEventsByDay(date)
+	if err != nil {
+		c.String(http.StatusNotFound, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, events)
+}
+
+func dueWeekHandler(c *gin.Context) {
+	params := []string{"day", "month", "year"}
+
+	m := make(map[string]int)
+	for _, d := range params {
+		val, err := strconv.Atoi(c.Params.ByName(d))
+		if err != nil {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
+		m[d] = val
+	}
+	date := time.Date(m["year"], time.Month(m["month"]), m["day"], 1, 2, 3, 0, time.Local)
+
+	events, err := calendarApp.ListEventsByWeek(date)
 	if err != nil {
 		c.String(http.StatusNotFound, err.Error())
 		return

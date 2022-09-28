@@ -29,6 +29,7 @@ type CalendarClient interface {
 	DeleteEvent(ctx context.Context, in *EventID, opts ...grpc.CallOption) (*EventID, error)
 	GetEventByID(ctx context.Context, in *EventID, opts ...grpc.CallOption) (*Event, error)
 	ListEventByDay(ctx context.Context, in *timestamppb.Timestamp, opts ...grpc.CallOption) (*EventResponse, error)
+	ListEventByWeek(ctx context.Context, in *timestamppb.Timestamp, opts ...grpc.CallOption) (*EventResponse, error)
 	ListEventByMonth(ctx context.Context, in *timestamppb.Timestamp, opts ...grpc.CallOption) (*EventResponse, error)
 	ListAllEvent(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EventResponse, error)
 	ListAllEventByUser(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*EventResponse, error)
@@ -87,6 +88,15 @@ func (c *calendarClient) ListEventByDay(ctx context.Context, in *timestamppb.Tim
 	return out, nil
 }
 
+func (c *calendarClient) ListEventByWeek(ctx context.Context, in *timestamppb.Timestamp, opts ...grpc.CallOption) (*EventResponse, error) {
+	out := new(EventResponse)
+	err := c.cc.Invoke(ctx, "/event.Calendar/ListEventByWeek", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *calendarClient) ListEventByMonth(ctx context.Context, in *timestamppb.Timestamp, opts ...grpc.CallOption) (*EventResponse, error) {
 	out := new(EventResponse)
 	err := c.cc.Invoke(ctx, "/event.Calendar/ListEventByMonth", in, out, opts...)
@@ -123,6 +133,7 @@ type CalendarServer interface {
 	DeleteEvent(context.Context, *EventID) (*EventID, error)
 	GetEventByID(context.Context, *EventID) (*Event, error)
 	ListEventByDay(context.Context, *timestamppb.Timestamp) (*EventResponse, error)
+	ListEventByWeek(context.Context, *timestamppb.Timestamp) (*EventResponse, error)
 	ListEventByMonth(context.Context, *timestamppb.Timestamp) (*EventResponse, error)
 	ListAllEvent(context.Context, *emptypb.Empty) (*EventResponse, error)
 	ListAllEventByUser(context.Context, *UserID) (*EventResponse, error)
@@ -147,6 +158,9 @@ func (UnimplementedCalendarServer) GetEventByID(context.Context, *EventID) (*Eve
 }
 func (UnimplementedCalendarServer) ListEventByDay(context.Context, *timestamppb.Timestamp) (*EventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEventByDay not implemented")
+}
+func (UnimplementedCalendarServer) ListEventByWeek(context.Context, *timestamppb.Timestamp) (*EventResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListEventByWeek not implemented")
 }
 func (UnimplementedCalendarServer) ListEventByMonth(context.Context, *timestamppb.Timestamp) (*EventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEventByMonth not implemented")
@@ -260,6 +274,24 @@ func _Calendar_ListEventByDay_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Calendar_ListEventByWeek_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(timestamppb.Timestamp)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalendarServer).ListEventByWeek(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/event.Calendar/ListEventByWeek",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalendarServer).ListEventByWeek(ctx, req.(*timestamppb.Timestamp))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Calendar_ListEventByMonth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(timestamppb.Timestamp)
 	if err := dec(in); err != nil {
@@ -340,6 +372,10 @@ var Calendar_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListEventByDay",
 			Handler:    _Calendar_ListEventByDay_Handler,
+		},
+		{
+			MethodName: "ListEventByWeek",
+			Handler:    _Calendar_ListEventByWeek_Handler,
 		},
 		{
 			MethodName: "ListEventByMonth",

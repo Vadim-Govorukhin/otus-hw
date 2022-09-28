@@ -125,6 +125,11 @@ func TestGRPCService(t *testing.T) {
 		expList := []model.Event{storage.TestEvent3, storage.TestEvent2}
 		GRPCListsEqual(t, internalgrpc.ListModelToListGRPC(expList), resp.GetEvent())
 
+		resp, err = client.ListEventByWeek(ctx, timestamppb.New(date))
+		require.NoError(t, err)
+		expList = []model.Event{storage.TestEvent, storage.TestEvent2}
+		GRPCListsEqual(t, internalgrpc.ListModelToListGRPC(expList), resp.GetEvent())
+
 		resp, err = client.ListEventByMonth(ctx, timestamppb.New(date))
 		require.NoError(t, err)
 		expList = []model.Event{storage.TestEvent2, storage.TestEvent}

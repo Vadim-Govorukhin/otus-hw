@@ -23,7 +23,8 @@ import (
 var calendarApp *app.App
 
 type Server struct {
-	eventer.UnimplementedCalendarServer
+	// eventer.UnimplementedCalendarServer
+	eventer.CalendarServer
 	address string
 	server  *grpc.Server
 }
@@ -111,6 +112,15 @@ func (s Server) GetEventByID(ctx context.Context, geid *eventer.EventID) (*event
 
 func (s Server) ListEventByDay(ctx context.Context, date *timestamppb.Timestamp) (*eventer.EventResponse, error) {
 	list, err := calendarApp.ListEventsByDay(date.AsTime())
+	if err != nil {
+		return nil, err
+	}
+	resp := &eventer.EventResponse{Event: ListModelToListGRPC(list)}
+	return resp, nil
+}
+
+func (s Server) ListEventByWeek(ctx context.Context, date *timestamppb.Timestamp) (*eventer.EventResponse, error) {
+	list, err := calendarApp.ListEventsByWeek(date.AsTime())
 	if err != nil {
 		return nil, err
 	}

@@ -43,6 +43,7 @@ service Calendar {
     rpc DeleteEvent(EventID) returns (EventID);
     rpc GetEventByID(EventID) returns (Event);
     rpc ListEventByDay(google.protobuf.Timestamp) returns (EventResponse);
+    rpc ListEventByWeek(google.protobuf.Timestamp) returns (EventResponse);
     rpc ListEventByMonth(google.protobuf.Timestamp) returns (EventResponse);
     rpc ListAllEvent(google.protobuf.Empty) returns (EventResponse);
     rpc ListAllEventByUser(UserID) returns (EventResponse);
