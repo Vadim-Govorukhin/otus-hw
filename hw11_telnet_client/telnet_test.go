@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -12,6 +13,15 @@ import (
 )
 
 func TestTelnetClient(t *testing.T) {
+	t.Run("wrong address", func(t *testing.T) {
+		client := NewTelnetClient("127.0.0.1:8081", 1*time.Second, os.Stdin, os.Stdout)
+		err := client.Connect()
+		require.ErrorIs(t, err, ErrConnectionEmpty)
+
+		client.Close()
+		require.ErrorIs(t, err, ErrConnectionEmpty)
+	})
+
 	t.Run("basic", func(t *testing.T) {
 		l, err := net.Listen("tcp", "127.0.0.1:")
 		require.NoError(t, err)
