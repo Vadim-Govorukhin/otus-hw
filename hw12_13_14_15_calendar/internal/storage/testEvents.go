@@ -5,6 +5,7 @@ import (
 
 	"github.com/Vadim-Govorukhin/otus-hw/hw12_13_14_15_calendar/internal/model"
 	"github.com/google/uuid"
+	jsontime "github.com/liamylian/jsontime/v2/v2"
 )
 
 var (
@@ -35,4 +36,49 @@ var (
 		UserID:         0,
 		NotifyUserTime: (24 * time.Hour).Seconds(),
 	}
+	TmpEvent model.Event
 )
+
+var (
+	TestEventJSON        []byte
+	TestEvent2JSON       []byte
+	TestEvent3JSON       []byte
+	TestEventJSONUpdated []byte
+)
+
+type TestEventIDRespose struct {
+	ID model.EventID `db:"event_id" json:"eventId,omitempty"`
+}
+
+var (
+	TestEventIDJson  []byte
+	TestEvent3IDJson []byte
+	TestEvent2IDJson []byte
+)
+
+func init() {
+	jsontime.AddTimeFormatAlias("sql_datetime", time.RFC3339Nano)
+	json := jsontime.ConfigWithCustomTimeFormat
+
+	TestEventJSON, _ = json.Marshal(TestEvent)
+	TestEvent2JSON, _ = json.Marshal(TestEvent2)
+	TestEvent3JSON, _ = json.Marshal(TestEvent3)
+
+	TmpEvent = TestEvent2
+	TmpEvent.ID = TestEvent.ID
+	TestEventJSONUpdated, _ = json.Marshal(TmpEvent)
+
+	TestEventID := TestEventIDRespose{
+		ID: TestEvent.ID,
+	}
+	TestEvent2ID := TestEventIDRespose{
+		ID: TestEvent2.ID,
+	}
+	TestEvent3ID := TestEventIDRespose{
+		ID: TestEvent3.ID,
+	}
+
+	TestEventIDJson, _ = json.Marshal(TestEventID)
+	TestEvent2IDJson, _ = json.Marshal(TestEvent2ID)
+	TestEvent3IDJson, _ = json.Marshal(TestEvent3ID)
+}

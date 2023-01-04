@@ -35,7 +35,6 @@ func (s *Storage) Create(e model.Event) (err error) {
 }
 
 func (s *Storage) Close(ctx context.Context) error {
-	// TODO?
 	return nil
 }
 
@@ -128,4 +127,11 @@ func (s *Storage) ListUserEvents(userID model.UserID) ([]model.Event, error) {
 	}
 	s.mu.RUnlock()
 	return listEvents, nil
+}
+
+func (s *Storage) ClearAll() error {
+	s.mu.Lock()
+	s.db = make(map[model.EventID]model.Event, 0)
+	s.mu.Unlock()
+	return nil
 }

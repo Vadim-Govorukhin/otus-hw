@@ -1,15 +1,16 @@
 [hTTPServer]
 host = "127.0.0.1"
 port = "5080"
-log_path = "\\logs\\server_log.json"
+log_path = "\\logs\\server_http_log.json"
+
+[gRPCServer]
+host = "127.0.0.1"
+port = "5081"
 
 [logger]
 level = "INFO"
 path = "\\logs\\log.json"
 
 [storage]
-type = "memory"
+type = "sql"
 database_url = "postgres://otus:otus@localhost:5432/calendar?sslmode=disable"
-
-# TODO
-# ...

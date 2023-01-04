@@ -42,9 +42,13 @@ func (a *App) Update(eid model.EventID, e model.Event) error {
 	return err
 }
 
-func (a *App) Delete(eid model.EventID) {
+func (a *App) Delete(eid model.EventID) error {
 	a.log.Infof("delete event with id=%s", eid)
-	a.storage.Delete(eid)
+	err := a.storage.Delete(eid)
+	if err != nil {
+		a.log.Errorf("can't delete event: %s", err)
+	}
+	return err
 }
 
 func (a *App) GetEventByid(eid model.EventID) (model.Event, error) {
@@ -59,6 +63,7 @@ func (a *App) GetEventByid(eid model.EventID) (model.Event, error) {
 func (a *App) ListEventsByDay(date time.Time) ([]model.Event, error) {
 	a.log.Infof("select events by day %v", date.Day())
 	listEvents, err := a.storage.ListEventsByDay(date)
+	a.log.Infof("selected %v events", len(listEvents))
 	if err != nil {
 		a.log.Errorf("can't select events: %s", err)
 	}
@@ -68,6 +73,7 @@ func (a *App) ListEventsByDay(date time.Time) ([]model.Event, error) {
 func (a *App) ListEventsByWeek(date time.Time) ([]model.Event, error) {
 	a.log.Info("select events by week")
 	listEvents, err := a.storage.ListEventsByWeek(date)
+	a.log.Infof("selected %v events", len(listEvents))
 	if err != nil {
 		a.log.Errorf("can't select events: %s", err)
 	}
@@ -77,6 +83,7 @@ func (a *App) ListEventsByWeek(date time.Time) ([]model.Event, error) {
 func (a *App) ListEventsByMonth(date time.Time) ([]model.Event, error) {
 	a.log.Infof("select events by month %v", date.Month())
 	listEvents, err := a.storage.ListEventsByMonth(date)
+	a.log.Infof("selected %v events", len(listEvents))
 	if err != nil {
 		a.log.Errorf("can't select events: %s", err)
 	}
@@ -86,6 +93,7 @@ func (a *App) ListEventsByMonth(date time.Time) ([]model.Event, error) {
 func (a *App) ListAllEvents() ([]model.Event, error) {
 	a.log.Info("select all events")
 	listEvents, err := a.storage.ListAllEvents()
+	a.log.Infof("selected %v events", len(listEvents))
 	if err != nil {
 		a.log.Errorf("can't select events: %s", err)
 	}
@@ -95,6 +103,7 @@ func (a *App) ListAllEvents() ([]model.Event, error) {
 func (a *App) ListUserEvents(uid model.UserID) ([]model.Event, error) {
 	a.log.Infof("select events by user %v", uid)
 	listEvents, err := a.storage.ListUserEvents(uid)
+	a.log.Infof("selected %v events", len(listEvents))
 	if err != nil {
 		a.log.Errorf("can't select events: %s", err)
 	}

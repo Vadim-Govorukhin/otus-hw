@@ -20,24 +20,6 @@ const (
 	testDatabaseURL = "postgres://otus:otus@localhost:5432/calendar_test?sslmode=disable"
 )
 
-func teardown(s *Storage, tables []string) error {
-	if len(tables) > 0 {
-		// res, err := s.db.Exec("DELETE FROM ", strings.Join(tables, " ,"))
-		res, err := s.db.Exec("DELETE FROM events;")
-		if err != nil {
-			fmt.Printf("can't delete contents from %s\n with error: %v\n", tables, err)
-			return err
-		}
-		n, err := res.RowsAffected()
-		if err != nil {
-			fmt.Printf("can't count affected rows: %v\n", err)
-			return err
-		}
-		fmt.Printf("deleted %v rows\n", n)
-	}
-	return nil
-}
-
 func setupTest(t *testing.T) *Storage {
 	t.Helper()
 	fmt.Printf("====== start test %s =====\n", t.Name())
@@ -76,7 +58,7 @@ func TestStorage(t *testing.T) {
 	t.Run("create events in test db", func(t *testing.T) {
 		store := setupTest(t)
 		defer func() {
-			err := teardown(store, []string{"events"})
+			err := store.ClearAll()
 			require.NoError(t, err)
 			store.Close(context.Background())
 		}()
@@ -88,7 +70,7 @@ func TestStorage(t *testing.T) {
 	t.Run("get by id test db", func(t *testing.T) {
 		store := setupTest(t)
 		defer func() {
-			err := teardown(store, []string{"events"})
+			err := store.ClearAll()
 			require.NoError(t, err)
 			store.Close(context.Background())
 		}()
@@ -107,7 +89,7 @@ func TestStorage(t *testing.T) {
 	t.Run("Update and delete event", func(t *testing.T) {
 		store := setupTest(t)
 		defer func() {
-			err := teardown(store, []string{"events"})
+			err := store.ClearAll()
 			require.NoError(t, err)
 			store.Close(context.Background())
 		}()
@@ -142,7 +124,7 @@ func TestStorage(t *testing.T) {
 	t.Run("lists events in test db", func(t *testing.T) {
 		store := setupTest(t)
 		defer func() {
-			err := teardown(store, []string{"events"})
+			err := store.ClearAll()
 			require.NoError(t, err)
 			store.Close(context.Background())
 		}()
@@ -158,7 +140,7 @@ func TestStorage(t *testing.T) {
 	t.Run("lists events in test db", func(t *testing.T) {
 		store := setupTest(t)
 		defer func() {
-			err := teardown(store, []string{"events"})
+			err := store.ClearAll()
 			require.NoError(t, err)
 			store.Close(context.Background())
 		}()

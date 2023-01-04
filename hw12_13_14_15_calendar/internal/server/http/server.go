@@ -2,6 +2,7 @@ package internalhttp
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -24,24 +25,14 @@ import (
 
 var calendarApp *app.App
 
-type Server struct { // TODO
+type Server struct {
 	server *http.Server
-}
-
-func NewServer(logger *logger.Logger, app *app.App, conf *config.HTTPServerConf) *Server {
-	address := net.JoinHostPort(conf.Host, conf.Port)
-	logPath := conf.LogPath
-
-	return &Server{server: &http.Server{
-		Addr:    address,
-		Handler: createHandler(app, logPath, logger),
-	}}
 }
 
 func (s *Server) Start(ctx context.Context) error {
 	jsontime.AddTimeFormatAlias("sql_datetime", "2006-01-02 15:04:05")
 	err := s.server.ListenAndServe()
-	if err == http.ErrServerClosed {
+	if errors.Is(err, http.ErrServerClosed) {
 		return nil
 	}
 	return err
@@ -51,41 +42,56 @@ func (s *Server) Stop(ctx context.Context) error {
 	if err := s.server.Shutdown(ctx); err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func createHandler(calendar *app.App, logPath string, logg *logger.Logger) http.Handler {
+func configureLoggerGin(logg *logger.Logger, logPath string) gin.HandlerFunc {
 	curDir, err := os.Getwd()
 	if err != nil {
 		logg.DPanicf("can't get working dir %w", err)
 	}
 
-	logFile, err := os.OpenFile(filepath.Join(curDir, logPath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	logFile, err := os.OpenFile(filepath.Join(curDir, logPath),
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		logg.DPanicf("can't open log file %w", err)
 	}
 	gin.DefaultWriter = io.MultiWriter(logFile, os.Stdout)
 
-	router := gin.Default()
-	router.Use(ginzap.Logger(3*time.Second, logg.Desugar()))
+	ginLogg := ginzap.Logger(3*time.Second, logg.Desugar())
+	return ginLogg
+}
 
+func NewServer(logg *logger.Logger, app *app.App, conf *config.HTTPServerConf) *Server {
+	address := net.JoinHostPort(conf.Host, conf.Port)
+	ginLogg := configureLoggerGin(logg, conf.LogPath)
+
+	return &Server{server: &http.Server{
+		Addr:    address,
+		Handler: CreateHandler(app, ginLogg),
+	}}
+}
+
+func CreateHandler(calendar *app.App, ginLogg gin.HandlerFunc) http.Handler {
 	calendarApp = calendar
 
-	router.POST("/event/", createEventHandler)          // Create
-	router.PUT("/event/:id", updateEventHandler)        // Update
-	router.DELETE("/event/:id", deleteEventHandler)     // Delete
-	router.GET("/event/:id", getEventHandler)           // GetEventByid
-	router.GET("/due/:year/:month/:day", dueDayHandler) // ListEventsByDay
-	router.GET("/due/:year/:month", dueMonthHandler)    // ListEventsByMonth
-	router.GET("/event/", getAllEventsHandler)          // ListAllEvents
-	router.GET("/user/:uid", getAllUserEventsHandler)   // ListUserEvents
+	router := gin.Default()
+	router.Use(ginLogg)
+
+	router.POST("/event/", createEventHandler)               // Create
+	router.PUT("/event/:id", updateEventHandler)             // Update
+	router.DELETE("/event/:id", deleteEventHandler)          // Delete
+	router.GET("/event/:id", getEventHandler)                // GetEventByid
+	router.GET("/due/:year/:month/:day", dueDayHandler)      // ListEventsByDay
+	router.GET("/dueweek/:year/:month/:day", dueWeekHandler) // ListEventsByWeek
+	router.GET("/due/:year/:month", dueMonthHandler)         // ListEventsByMonth
+	router.GET("/event/", getAllEventsHandler)               // ListAllEvents
+	router.GET("/user/:uid", getAllUserEventsHandler)        // ListUserEvents
 	return router
 }
 
 func createEventHandler(c *gin.Context) {
 	json := jsontime.ConfigWithCustomTimeFormat
-
 	jsonData, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
@@ -103,12 +109,11 @@ func createEventHandler(c *gin.Context) {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"Id": id})
+	c.JSON(http.StatusOK, gin.H{"eventId": id})
 }
 
 func updateEventHandler(c *gin.Context) {
 	json := jsontime.ConfigWithCustomTimeFormat
-
 	id, err := uuid.Parse(c.Params.ByName("id"))
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
@@ -132,7 +137,7 @@ func updateEventHandler(c *gin.Context) {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"Id": id})
+	c.JSON(http.StatusOK, gin.H{"eventId": id})
 }
 
 func deleteEventHandler(c *gin.Context) {
@@ -186,8 +191,8 @@ func dueDayHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, events)
 }
 
-func dueMonthHandler(c *gin.Context) {
-	params := []string{"month", "year"}
+func dueWeekHandler(c *gin.Context) {
+	params := []string{"day", "month", "year"}
 
 	m := make(map[string]int)
 	for _, d := range params {
@@ -200,7 +205,30 @@ func dueMonthHandler(c *gin.Context) {
 	}
 	date := time.Date(m["year"], time.Month(m["month"]), m["day"], 1, 2, 3, 0, time.Local)
 
-	events, err := calendarApp.ListEventsByDay(date)
+	events, err := calendarApp.ListEventsByWeek(date)
+	if err != nil {
+		c.String(http.StatusNotFound, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, events)
+}
+
+func dueMonthHandler(c *gin.Context) {
+	params := []string{"month", "year"}
+
+	m := make(map[string]int)
+	for _, d := range params {
+		val, err := strconv.Atoi(c.Params.ByName(d))
+		if err != nil {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
+		m[d] = val
+	}
+	date := time.Date(m["year"], time.Month(m["month"]), 1, 1, 2, 3, 0, time.Local)
+
+	events, err := calendarApp.ListEventsByMonth(date)
 	if err != nil {
 		c.String(http.StatusNotFound, err.Error())
 		return
@@ -213,7 +241,6 @@ func getAllEventsHandler(c *gin.Context) {
 	allEvents, err := calendarApp.ListAllEvents()
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
-		// c.Writer.WriteHeader(statusServerError)
 		return
 	}
 	c.JSON(http.StatusOK, allEvents)
